@@ -70,6 +70,12 @@ assets/                     AppIcon-1024.png source (not yet added)
   NSTextField editor silently swallows Return/Tab/Esc. NSTextView's own
   delegate path (`textView(_:doCommandBy:)`) is reliable. Do not "simplify"
   back to NSTextField.
+- **The editor overlay must be re-raised when row views rebuild.** A full
+  reloadData rebuilds row views lazily on the *next* layout pass; when
+  selection change and beginEdit happen in one event cycle (double-click),
+  fresh row views stack over the editor and the blanked cell looks empty.
+  GridTableView.didAddSubview re-raises `overlayEditor` — keep that wiring
+  when touching the edit session.
 - **Scripted E2E typing must leave Japanese IME first** (System Events
   `key code 102` = Eisū). With the IME composing, Return commits the
   composition — which is the *correct* user-facing behavior, but makes an
