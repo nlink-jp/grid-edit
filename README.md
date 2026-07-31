@@ -30,13 +30,19 @@ input, focus, and menus behave like macOS, not like a web page.
   into a single cell expands across cells; shape mismatches and pastes
   that would grow the table ask for confirmation first
 - **Undo / Redo** for every edit, batch edits collapse to one step
+- **Row & column operations** (right-click a row number or column header):
+  insert above/below or left/right, duplicate, move (also Alt+arrows),
+  delete — all undoable
+- **Sort** (right-click a column header): ascending / descending,
+  multi-key when multiple columns are selected, numeric vs string
+  auto-detected per pair
 - Maximum file size: 500 MB (larger files are refused with a clear error)
 
 ## Planned (Phase 2 — csv-editor parity)
 
-Find & Replace, sort, row/column insert/duplicate/move/delete, header
-renaming, column auto-fit, Open Recent, window-frame persistence, and
-delimiter conversion UI on save.
+Find & Replace, header renaming, column auto-fit, numeric right-align,
+status bar with save-time format selection (encoding / delimiter / line
+ending), Open Recent, and window-frame persistence.
 
 By design, grid-edit is **not** a spreadsheet — no formulas, sheets, charts,
 xlsx/ods, or macros. Windows and Linux are not supported.

@@ -18,6 +18,10 @@ final class GridTableView: NSTableView {
     var onMove: ((GridSelection.Direction, _ toEdge: Bool, _ extending: Bool) -> Void)?
     var onClearCells: (() -> Void)?
     var onPage: ((_ down: Bool) -> Void)?
+    /// Alt+arrow: move the selected row/column block.
+    var onMoveBlock: ((GridSelection.Direction) -> Void)?
+    /// Right-click in the grid body.
+    var onContextMenu: ((GridHit) -> NSMenu?)?
 
     /// The cell-editor overlay, kept above the row views. reloadData
     /// rebuilds row views lazily on the next layout pass, which would
@@ -34,6 +38,20 @@ final class GridTableView: NSTableView {
     }
 
     override var acceptsFirstResponder: Bool { true }
+
+    /// Header view that forwards right-clicks per data column.
+    final class HeaderView: NSTableHeaderView {
+        var onMenu: ((Int) -> NSMenu?)?
+
+        override func menu(for event: NSEvent) -> NSMenu? {
+            let point = convert(event.locationInWindow, from: nil)
+            let columnIndex = column(at: point)
+            guard columnIndex >= 0, let tableView,
+                  let dataColumn = GridViewController.dataColumnIndex(
+                    of: tableView.tableColumns[columnIndex]) else { return nil }
+            return onMenu?(dataColumn)
+        }
+    }
 
     private func gridHit(for event: NSEvent) -> GridHit? {
         let point = convert(event.locationInWindow, from: nil)
@@ -71,10 +89,25 @@ final class GridTableView: NSTableView {
         }
     }
 
+    override func menu(for event: NSEvent) -> NSMenu? {
+        guard let hit = gridHit(for: event) else { return nil }
+        return onContextMenu?(hit)
+    }
+
     override func keyDown(with event: NSEvent) {
         let flags = event.modifierFlags
         let extending = flags.contains(.shift)
         let toEdge = flags.contains(.command)
+
+        if flags.contains(.option) {
+            switch event.keyCode {
+            case 126: onMoveBlock?(.up); return
+            case 125: onMoveBlock?(.down); return
+            case 123: onMoveBlock?(.left); return
+            case 124: onMoveBlock?(.right); return
+            default: break
+            }
+        }
 
         switch event.keyCode {
         case 126: onMove?(.up, toEdge, extending)

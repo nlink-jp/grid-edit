@@ -22,6 +22,12 @@ All notable changes to this project will be documented in this file.
 - TSV clipboard: quoted Excel-compatible copy, paste expansion from a
   single cell, confirmation on shape mismatch or table growth
 - Undo / Redo through NSDocument's undo manager (batch edits = one step)
+- Row/column operations with undo: insert, duplicate, move (Alt+arrows),
+  delete via row-number / column-header context menus; cell context menu
+  (Cut/Copy/Paste/Clear)
+- Column sort: ascending/descending from the header context menu,
+  multi-key across a column selection, numeric auto-detection
+  (csv-editor sort semantics)
 - Main menu with standard File/Edit shortcuts
 - Project scaffold: SPM package (GridEditCore engine module + GridEdit app),
   Makefile build/sign/notarize pipeline, document-typed Info.plist,

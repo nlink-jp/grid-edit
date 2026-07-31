@@ -68,8 +68,8 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("not used") }
 
-    private var rowCount: Int { content.table.rows.count }
-    private var columnCount: Int { content.table.maxColumns }
+    var rowCount: Int { content.table.rows.count }
+    var columnCount: Int { content.table.maxColumns }
 
     // MARK: View construction
 
@@ -130,6 +130,12 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         }
         tableView.onClearCells = { [weak self] in self?.clearSelectedCells() }
         tableView.onPage = { [weak self] down in self?.pageSelection(down: down) }
+        tableView.onMoveBlock = { [weak self] direction in self?.moveBlock(direction) }
+        tableView.onContextMenu = { [weak self] hit in self?.contextMenu(for: hit) }
+
+        let header = GridTableView.HeaderView()
+        header.onMenu = { [weak self] dataColumn in self?.headerContextMenu(forColumn: dataColumn) }
+        tableView.headerView = header
     }
 
     private func select(_ hit: GridTableView.GridHit, extending: Bool) {
@@ -169,7 +175,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         scrollToFocus()
     }
 
-    private func scrollToFocus() {
+    func scrollToFocus() {
         guard let focus = selection?.focus else { return }
         tableView.scrollRowToVisible(focus.row)
         let columnIndex = focus.column + 1 // + row-number column
@@ -203,13 +209,22 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     }
 
     private func syncDataColumns() {
+        // Structural column ops shrink/grow the table and rewrite header
+        // titles — keep NSTableColumn count and titles in lockstep.
+        while tableView.tableColumns.count - 1 > columnCount {
+            tableView.removeTableColumn(tableView.tableColumns[tableView.tableColumns.count - 1])
+        }
         let existing = tableView.tableColumns.count - 1 // minus row-number column
         for index in existing..<columnCount {
             let column = NSTableColumn(identifier: Self.dataColumnID(index))
-            column.title = columnTitle(index)
             column.width = 120
             column.minWidth = 24
             tableView.addTableColumn(column)
+        }
+        for column in tableView.tableColumns {
+            if let index = Self.dataColumnIndex(of: column) {
+                column.title = columnTitle(index)
+            }
         }
     }
 

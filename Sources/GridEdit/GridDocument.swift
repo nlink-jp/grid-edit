@@ -49,6 +49,35 @@ final class GridDocument: NSDocument {
             content, changedRows: Set(undo.oldRows.map(\.index)))
     }
 
+    /// Applies a structural table operation (row/column ops, sort, header
+    /// rename) as one undoable action. `op` returns false for a no-op, in
+    /// which case nothing is registered.
+    @discardableResult
+    func performTableOperation(_ actionName: String, _ op: (inout CSVTable) -> Bool) -> Bool {
+        let before = content.table.snapshot()
+        guard op(&content.table) else { return false }
+        let after = content.table.snapshot()
+        undoManager?.registerUndo(withTarget: self) { document in
+            document.applySnapshot(before, opposite: after, actionName: actionName)
+        }
+        undoManager?.setActionName(actionName)
+        gridViewController?.contentDidChange(content)
+        return true
+    }
+
+    private func applySnapshot(
+        _ snapshot: CSVTable.Snapshot,
+        opposite: CSVTable.Snapshot,
+        actionName: String
+    ) {
+        content.table.restore(snapshot)
+        undoManager?.registerUndo(withTarget: self) { document in
+            document.applySnapshot(opposite, opposite: snapshot, actionName: actionName)
+        }
+        undoManager?.setActionName(actionName)
+        gridViewController?.contentDidChange(content)
+    }
+
     // MARK: Reading / writing
 
     override func read(from url: URL, ofType typeName: String) throws {
