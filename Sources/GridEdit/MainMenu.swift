@@ -60,7 +60,7 @@ enum MainMenu {
                          action: #selector(NSText.copy(_:)), keyEquivalent: "c")
         editMenu.addItem(withTitle: L("Paste"),
                          action: #selector(NSText.paste(_:)), keyEquivalent: "v")
-        editMenu.addItem(withTitle: L("Delete"),
+        editMenu.addItem(withTitle: L("Clear Contents"),
                          action: #selector(NSText.delete(_:)), keyEquivalent: "")
         editMenu.addItem(.separator())
         editMenu.addItem(withTitle: L("Select All"),
