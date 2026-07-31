@@ -96,7 +96,7 @@ final class StructuralOperationsFlowTests: XCTestCase {
             rows: [["10", "x"], ["2", "y"], ["1", "z"]])
         vc.sortByColumns(0...0, ascending: true)
         XCTAssertEqual(document.content.table.rows, [["1", "z"], ["2", "y"], ["10", "x"]])
-        XCTAssertEqual(document.undoManager?.undoActionName, "Sort Ascending")
+        XCTAssertEqual(document.undoManager?.undoActionName, L("Sort Ascending"))
 
         document.undoManager?.undo()
         XCTAssertEqual(document.content.table.rows, [["10", "x"], ["2", "y"], ["1", "z"]])
@@ -107,7 +107,7 @@ final class StructuralOperationsFlowTests: XCTestCase {
         vc.selection = GridSelection(anchor: GridPosition(row: 0, column: 0))
         let menu = try XCTUnwrap(vc.contextMenu(
             for: GridTableView.GridHit(row: 2, dataColumn: nil)))
-        XCTAssertTrue(menu.items[0].title.contains("Row"))
+        XCTAssertEqual(menu.items[0].title, L("Insert Row Above"))
         XCTAssertEqual(vc.selection?.rowRange, 2...2, "click outside selection retargets it")
     }
 
@@ -118,6 +118,8 @@ final class StructuralOperationsFlowTests: XCTestCase {
             anchor: GridPosition(row: 0, column: 0),
             focus: GridPosition(row: 0, column: 1))
         let menu = try XCTUnwrap(vc.headerContextMenu(forColumn: 1))
-        XCTAssertTrue(menu.items[0].title.contains("2 Columns"))
+        XCTAssertEqual(
+            menu.items[0].title,
+            LPlural(2, one: "Insert Column Left", other: "Insert %d Columns Left"))
     }
 }

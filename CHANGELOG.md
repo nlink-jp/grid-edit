@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- UI localization (English / Japanese): menus, context menus, find and
+  format bars, dialogs, undo action names, and error messages follow the
+  system (or per-app) language via standard `.lproj` bundles
+
 ## [0.1.0] - 2026-08-01
 
 First release. Native macOS successor to

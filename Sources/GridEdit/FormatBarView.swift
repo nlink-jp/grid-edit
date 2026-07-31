@@ -14,7 +14,7 @@ final class FormatBarView: NSView {
     private let delimiterPopup = NSPopUpButton()
     private let lineEndingPopup = NSPopUpButton()
     private let headerCheckbox = NSButton(
-        checkboxWithTitle: "Header", target: nil, action: nil)
+        checkboxWithTitle: L("Header"), target: nil, action: nil)
     private let sizeLabel = NSTextField(labelWithString: "")
 
     init() {
@@ -42,9 +42,9 @@ final class FormatBarView: NSView {
         sizeLabel.textColor = .secondaryLabelColor
 
         let stack = NSStackView(views: [
-            label("Encoding:"), encodingPopup,
-            label("Delimiter:"), delimiterPopup,
-            label("Line ending:"), lineEndingPopup,
+            label(L("Encoding:")), encodingPopup,
+            label(L("Delimiter:")), delimiterPopup,
+            label(L("Line ending:")), lineEndingPopup,
             headerCheckbox,
             NSView(), // spacer
             sizeLabel,
@@ -89,8 +89,9 @@ final class FormatBarView: NSView {
         lineEndingPopup.selectItem(withTitle: content.lineEnding.rawValue)
 
         headerCheckbox.state = content.hasHeader ? .on : .off
-        sizeLabel.stringValue =
-            "\(content.table.rows.count) rows × \(content.table.maxColumns) cols"
+        sizeLabel.stringValue = String(
+            format: L("%d rows × %d cols"),
+            content.table.rows.count, content.table.maxColumns)
     }
 
     @objc private func encodingChanged() {

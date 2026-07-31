@@ -64,6 +64,16 @@ assets/                     AppIcon-1024.png source (not yet added)
 
 ## Gotchas
 
+- **Localization**: user-facing strings go through `L()` / `LPlural()`
+  (keys are the English source text; `en.lproj` is an identity table).
+  Add every new key to BOTH `Sources/<target>/Resources/{en,ja}.lproj/
+  Localizable.strings` — LocalizationTests fails on key-set drift. The
+  Makefile copies the SPM resource bundles (`GridEdit_*.bundle`) into
+  the app's Resources; without that step every string falls back to
+  English. Tests must never assert English literals for UI strings
+  (the test process runs in the system language) — compare against
+  `L(...)` instead.
+
 - **The cell editor is an NSTextView overlay, not an NSTextField.** Inside
   an NSTableView the field-editor delegate forwarding
   (`control:textView:doCommandBySelector:`) does not fire, so an

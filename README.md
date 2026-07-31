@@ -52,6 +52,8 @@ input, focus, and menus behave like macOS, not like a web page.
 - **Open Recent**, **drag & drop** a CSV/TSV anywhere on a window to
   open it, and **window position/size remembered** across sessions
   (additional windows cascade)
+- **Localized UI (English / Japanese)** — follows the system language,
+  switchable per app in System Settings › General › Language & Region
 - Maximum file size: 500 MB (larger files are refused with a clear error)
 
 Phase 2 (csv-editor feature parity) is complete — remaining work is

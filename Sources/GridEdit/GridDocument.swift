@@ -155,9 +155,9 @@ final class GridDocument: NSDocument {
 extension Delimiter {
     var displayName: String {
         switch self {
-        case .comma: return "Comma"
-        case .tab: return "Tab"
-        case .semicolon: return "Semicolon"
+        case .comma: return L("Comma")
+        case .tab: return L("Tab")
+        case .semicolon: return L("Semicolon")
         }
     }
 }

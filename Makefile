@@ -42,6 +42,9 @@ build-app: build
 	@rm -rf $(APP_BUNDLE)
 	@mkdir -p $(APP_BUNDLE)/Contents/MacOS $(APP_BUNDLE)/Contents/Resources
 	@cp $(BUILD_DIR)/$(APP_NAME) $(APP_BUNDLE)/Contents/MacOS/
+	@# SPM resource bundles (en/ja localizations) — Bundle.module finds them
+	@# in Contents/Resources next to the executable's main bundle.
+	@cp -R $(BUILD_DIR)/GridEdit_*.bundle $(APP_BUNDLE)/Contents/Resources/
 	@sed 's/$${VERSION}/$(VERSION)/g; s/$${BUNDLE_ID}/$(BUNDLE_ID)/g; s/$${APP_NAME}/$(APP_NAME)/g' \
 		Info.plist > $(APP_BUNDLE)/Contents/Info.plist
 	@if [ -f "$(ICON_SRC)" ]; then \

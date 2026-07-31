@@ -69,10 +69,10 @@ extension GridViewController {
         }
         let menu = NSMenu()
         for (title, action) in [
-            ("Cut", #selector(cut(_:))),
-            ("Copy", #selector(copy(_:))),
-            ("Paste", #selector(paste(_:))),
-            ("Clear Contents", #selector(delete(_:))),
+            (L("Cut"), #selector(cut(_:))),
+            (L("Copy"), #selector(copy(_:))),
+            (L("Paste"), #selector(paste(_:))),
+            (L("Clear Contents"), #selector(delete(_:))),
         ] {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
             item.target = self
@@ -83,47 +83,59 @@ extension GridViewController {
 
     private func rowContextMenu(clicked row: Int) -> NSMenu {
         let rows = targetRows(clicked: row)
-        let noun = rows.count > 1 ? "\(rows.count) Rows" : "Row"
+        let n = rows.count
         let menu = NSMenu()
-        menu.addItem(item("Insert \(noun) Above") { [weak self] in self?.insertRows(rows, above: true) })
-        menu.addItem(item("Insert \(noun) Below") { [weak self] in self?.insertRows(rows, above: false) })
-        menu.addItem(item("Duplicate \(noun)") { [weak self] in self?.duplicateRows(rows) })
+        menu.addItem(item(LPlural(n, one: "Insert Row Above", other: "Insert %d Rows Above")) {
+            [weak self] in self?.insertRows(rows, above: true) })
+        menu.addItem(item(LPlural(n, one: "Insert Row Below", other: "Insert %d Rows Below")) {
+            [weak self] in self?.insertRows(rows, above: false) })
+        menu.addItem(item(LPlural(n, one: "Duplicate Row", other: "Duplicate %d Rows")) {
+            [weak self] in self?.duplicateRows(rows) })
         menu.addItem(.separator())
-        menu.addItem(item("Move \(noun) Up") { [weak self] in self?.moveRows(rows, up: true) })
-        menu.addItem(item("Move \(noun) Down") { [weak self] in self?.moveRows(rows, up: false) })
+        menu.addItem(item(LPlural(n, one: "Move Row Up", other: "Move %d Rows Up")) {
+            [weak self] in self?.moveRows(rows, up: true) })
+        menu.addItem(item(LPlural(n, one: "Move Row Down", other: "Move %d Rows Down")) {
+            [weak self] in self?.moveRows(rows, up: false) })
         menu.addItem(.separator())
-        menu.addItem(item("Delete \(noun)") { [weak self] in self?.deleteRows(rows) })
+        menu.addItem(item(LPlural(n, one: "Delete Row", other: "Delete %d Rows")) {
+            [weak self] in self?.deleteRows(rows) })
         return menu
     }
 
     func headerContextMenu(forColumn column: Int) -> NSMenu? {
         commitEditIfNeeded()
         let columns = targetColumns(clicked: column)
-        let noun = columns.count > 1 ? "\(columns.count) Columns" : "Column"
+        let n = columns.count
         let menu = NSMenu()
-        menu.addItem(item("Insert \(noun) Left") { [weak self] in self?.insertColumns(columns, left: true) })
-        menu.addItem(item("Insert \(noun) Right") { [weak self] in self?.insertColumns(columns, left: false) })
-        menu.addItem(item("Duplicate \(noun)") { [weak self] in self?.duplicateColumns(columns) })
+        menu.addItem(item(LPlural(n, one: "Insert Column Left", other: "Insert %d Columns Left")) {
+            [weak self] in self?.insertColumns(columns, left: true) })
+        menu.addItem(item(LPlural(n, one: "Insert Column Right", other: "Insert %d Columns Right")) {
+            [weak self] in self?.insertColumns(columns, left: false) })
+        menu.addItem(item(LPlural(n, one: "Duplicate Column", other: "Duplicate %d Columns")) {
+            [weak self] in self?.duplicateColumns(columns) })
         menu.addItem(.separator())
-        menu.addItem(item("Move \(noun) Left") { [weak self] in self?.moveColumns(columns, left: true) })
-        menu.addItem(item("Move \(noun) Right") { [weak self] in self?.moveColumns(columns, left: false) })
+        menu.addItem(item(LPlural(n, one: "Move Column Left", other: "Move %d Columns Left")) {
+            [weak self] in self?.moveColumns(columns, left: true) })
+        menu.addItem(item(LPlural(n, one: "Move Column Right", other: "Move %d Columns Right")) {
+            [weak self] in self?.moveColumns(columns, left: false) })
         menu.addItem(.separator())
-        menu.addItem(item("Sort Ascending") { [weak self] in self?.sortByColumns(columns, ascending: true) })
-        menu.addItem(item("Sort Descending") { [weak self] in self?.sortByColumns(columns, ascending: false) })
+        menu.addItem(item(L("Sort Ascending")) { [weak self] in self?.sortByColumns(columns, ascending: true) })
+        menu.addItem(item(L("Sort Descending")) { [weak self] in self?.sortByColumns(columns, ascending: false) })
         menu.addItem(.separator())
         if content.hasHeader {
-            menu.addItem(item("Rename Column…") { [weak self] in
+            menu.addItem(item(L("Rename Column…")) { [weak self] in
                 self?.beginHeaderRename(column: column)
             })
         }
-        menu.addItem(item("Auto-fit Width") { [weak self] in
+        menu.addItem(item(L("Auto-fit Width")) { [weak self] in
             guard let self else { return }
             for column in columns {
                 self.autoFitColumn(column)
             }
         })
         menu.addItem(.separator())
-        menu.addItem(item("Delete \(noun)") { [weak self] in self?.deleteColumns(columns) })
+        menu.addItem(item(LPlural(n, one: "Delete Column", other: "Delete %d Columns")) {
+            [weak self] in self?.deleteColumns(columns) })
         return menu
     }
 
@@ -132,7 +144,7 @@ extension GridViewController {
     func insertRows(_ rows: ClosedRange<Int>, above: Bool) {
         let at = above ? rows.lowerBound : rows.upperBound + 1
         let count = rows.count
-        guard document?.performTableOperation("Insert Rows", {
+        guard document?.performTableOperation(L("Insert Rows"), {
             $0.insertRows(at: at, count: count)
         }) == true else { return }
         selection = fullRowSelection(at...(at + count - 1))
@@ -141,7 +153,7 @@ extension GridViewController {
 
     func duplicateRows(_ rows: ClosedRange<Int>) {
         let count = rows.count
-        guard document?.performTableOperation("Duplicate Rows", {
+        guard document?.performTableOperation(L("Duplicate Rows"), {
             $0.duplicateRows(startIndex: rows.lowerBound, count: count)
         }) == true else { return }
         let start = rows.upperBound + 1
@@ -150,7 +162,7 @@ extension GridViewController {
     }
 
     func moveRows(_ rows: ClosedRange<Int>, up: Bool) {
-        guard document?.performTableOperation("Move Rows", {
+        guard document?.performTableOperation(L("Move Rows"), {
             $0.moveRows(startIndex: rows.lowerBound, count: rows.count, up: up)
         }) == true else { return }
         let offset = up ? -1 : 1
@@ -159,7 +171,7 @@ extension GridViewController {
     }
 
     func deleteRows(_ rows: ClosedRange<Int>) {
-        guard document?.performTableOperation("Delete Rows", {
+        guard document?.performTableOperation(L("Delete Rows"), {
             $0.deleteRows(startIndex: rows.lowerBound, count: rows.count)
         }) == true else { return }
         if rowCount > 0 {
@@ -175,7 +187,7 @@ extension GridViewController {
     func insertColumns(_ columns: ClosedRange<Int>, left: Bool) {
         let at = left ? columns.lowerBound : columns.upperBound + 1
         let count = columns.count
-        guard document?.performTableOperation("Insert Columns", {
+        guard document?.performTableOperation(L("Insert Columns"), {
             $0.insertColumns(at: at, count: count)
         }) == true else { return }
         selection = fullColumnSelection(at...(at + count - 1))
@@ -183,7 +195,7 @@ extension GridViewController {
 
     func duplicateColumns(_ columns: ClosedRange<Int>) {
         let count = columns.count
-        guard document?.performTableOperation("Duplicate Columns", {
+        guard document?.performTableOperation(L("Duplicate Columns"), {
             $0.duplicateColumns(startIndex: columns.lowerBound, count: count)
         }) == true else { return }
         let start = columns.upperBound + 1
@@ -191,7 +203,7 @@ extension GridViewController {
     }
 
     func moveColumns(_ columns: ClosedRange<Int>, left: Bool) {
-        guard document?.performTableOperation("Move Columns", {
+        guard document?.performTableOperation(L("Move Columns"), {
             $0.moveColumns(startIndex: columns.lowerBound, count: columns.count, left: left)
         }) == true else { return }
         let offset = left ? -1 : 1
@@ -200,7 +212,7 @@ extension GridViewController {
     }
 
     func deleteColumns(_ columns: ClosedRange<Int>) {
-        guard document?.performTableOperation("Delete Columns", {
+        guard document?.performTableOperation(L("Delete Columns"), {
             $0.deleteColumns(startIndex: columns.lowerBound, count: columns.count)
         }) == true else { return }
         if columnCount > 0 {
@@ -215,7 +227,7 @@ extension GridViewController {
 
     func sortByColumns(_ columns: ClosedRange<Int>, ascending: Bool) {
         let keys = columns.map { SortKey(columnIndex: $0, ascending: ascending) }
-        document?.performTableOperation(ascending ? "Sort Ascending" : "Sort Descending") {
+        document?.performTableOperation(ascending ? L("Sort Ascending") : L("Sort Descending")) {
             $0.sortRows(by: keys)
         }
     }
@@ -272,7 +284,7 @@ extension GridViewController {
         editor.removeFromSuperview()
         view.window?.makeFirstResponder(tableView)
         if commit {
-            document?.performTableOperation("Rename Column") {
+            document?.performTableOperation(L("Rename Column")) {
                 $0.renameColumn(at: column, to: newValue)
             }
         }

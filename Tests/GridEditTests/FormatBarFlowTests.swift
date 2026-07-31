@@ -61,7 +61,7 @@ final class FormatBarFlowTests: XCTestCase {
         let (document, vc) = makeDocumentAndController()
         vc.formatBar.onEncodingChange?(.utf8bom)
         XCTAssertEqual(document.content.encoding, .utf8bom)
-        XCTAssertEqual(document.undoManager?.undoActionName, "Change Encoding")
+        XCTAssertEqual(document.undoManager?.undoActionName, L("Change Encoding"))
         let data = try document.data(ofType: "CSV Document")
         XCTAssertEqual(Array(data.prefix(3)), [0xEF, 0xBB, 0xBF])
 

@@ -60,7 +60,11 @@ public enum DocumentIO {
                     fromByteCount: Int64(byteCount), countStyle: .binary)
                 let limit = ByteCountFormatter.string(
                     fromByteCount: Int64(DocumentIO.maxFileSize), countStyle: .binary)
-                return "This file is \(size); grid-edit opens files up to \(limit)."
+                return String(
+                    format: NSLocalizedString(
+                        "This file is %@; grid-edit opens files up to %@.",
+                        bundle: .module, comment: ""),
+                    size, limit)
             }
         }
     }

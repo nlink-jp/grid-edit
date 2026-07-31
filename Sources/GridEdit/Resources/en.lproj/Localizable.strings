@@ -1,0 +1,117 @@
+/* App menu */
+"About GridEdit" = "About GridEdit";
+"Hide GridEdit" = "Hide GridEdit";
+"Hide Others" = "Hide Others";
+"Show All" = "Show All";
+"Quit GridEdit" = "Quit GridEdit";
+
+/* File menu */
+"File" = "File";
+"New" = "New";
+"Open…" = "Open…";
+"Close" = "Close";
+"Save…" = "Save…";
+"Save As…" = "Save As…";
+"Revert to Saved" = "Revert to Saved";
+
+/* Edit menu */
+"Edit" = "Edit";
+"Undo" = "Undo";
+"Redo" = "Redo";
+"Cut" = "Cut";
+"Copy" = "Copy";
+"Paste" = "Paste";
+"Delete" = "Delete";
+"Select All" = "Select All";
+"Find…" = "Find…";
+"Find and Replace…" = "Find and Replace…";
+"Find Next" = "Find Next";
+"Find Previous" = "Find Previous";
+
+/* Window menu */
+"Window" = "Window";
+"Minimize" = "Minimize";
+"Zoom" = "Zoom";
+
+/* Cell context menu */
+"Clear Contents" = "Clear Contents";
+
+/* Row context menu */
+"Insert Row Above" = "Insert Row Above";
+"Insert %d Rows Above" = "Insert %d Rows Above";
+"Insert Row Below" = "Insert Row Below";
+"Insert %d Rows Below" = "Insert %d Rows Below";
+"Duplicate Row" = "Duplicate Row";
+"Duplicate %d Rows" = "Duplicate %d Rows";
+"Move Row Up" = "Move Row Up";
+"Move %d Rows Up" = "Move %d Rows Up";
+"Move Row Down" = "Move Row Down";
+"Move %d Rows Down" = "Move %d Rows Down";
+"Delete Row" = "Delete Row";
+"Delete %d Rows" = "Delete %d Rows";
+
+/* Column context menu */
+"Insert Column Left" = "Insert Column Left";
+"Insert %d Columns Left" = "Insert %d Columns Left";
+"Insert Column Right" = "Insert Column Right";
+"Insert %d Columns Right" = "Insert %d Columns Right";
+"Duplicate Column" = "Duplicate Column";
+"Duplicate %d Columns" = "Duplicate %d Columns";
+"Move Column Left" = "Move Column Left";
+"Move %d Columns Left" = "Move %d Columns Left";
+"Move Column Right" = "Move Column Right";
+"Move %d Columns Right" = "Move %d Columns Right";
+"Delete Column" = "Delete Column";
+"Delete %d Columns" = "Delete %d Columns";
+"Sort Ascending" = "Sort Ascending";
+"Sort Descending" = "Sort Descending";
+"Rename Column…" = "Rename Column…";
+"Auto-fit Width" = "Auto-fit Width";
+
+/* Find bar */
+"Find" = "Find";
+"Replace" = "Replace";
+"Case sensitive" = "Case sensitive";
+"Regular expression" = "Regular expression";
+"Whole cell" = "Whole cell";
+"Cell" = "Cell";
+"All" = "All";
+"Replace all" = "Replace all";
+"Previous" = "Previous";
+"Next" = "Next";
+"Close" = "Close";
+
+/* Format bar */
+"Encoding:" = "Encoding:";
+"Delimiter:" = "Delimiter:";
+"Line ending:" = "Line ending:";
+"Header" = "Header";
+"%d rows × %d cols" = "%d rows × %d cols";
+"Comma" = "Comma";
+"Tab" = "Tab";
+"Semicolon" = "Semicolon";
+
+/* Paste confirmation */
+"Confirm paste" = "Confirm paste";
+"Cancel" = "Cancel";
+"The clipboard (%d×%d) doesn't match the selected %d×%d range." = "The clipboard (%d×%d) doesn't match the selected %d×%d range.";
+"The paste will extend the table to %d rows × %d columns." = "The paste will extend the table to %d rows × %d columns.";
+
+/* Undo action names */
+"Edit Cell" = "Edit Cell";
+"Clear" = "Clear";
+"Replace All" = "Replace All";
+"Insert Rows" = "Insert Rows";
+"Delete Rows" = "Delete Rows";
+"Duplicate Rows" = "Duplicate Rows";
+"Move Rows" = "Move Rows";
+"Insert Columns" = "Insert Columns";
+"Delete Columns" = "Delete Columns";
+"Duplicate Columns" = "Duplicate Columns";
+"Move Columns" = "Move Columns";
+"Rename Column" = "Rename Column";
+"Change Encoding" = "Change Encoding";
+"Change Delimiter" = "Change Delimiter";
+"Change Line Ending" = "Change Line Ending";
+"Enable Header" = "Enable Header";
+"Disable Header" = "Disable Header";

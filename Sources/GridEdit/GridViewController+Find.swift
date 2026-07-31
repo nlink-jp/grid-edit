@@ -95,7 +95,7 @@ extension GridViewController {
             match: match, query: findBar.searchField.stringValue,
             replacement: replacement, options: findBar.options,
             rows: content.table.rows) else { return }
-        document?.applyEdits([edit], actionName: "Replace")
+        document?.applyEdits([edit], actionName: L("Replace"))
         // contentDidChange already re-ran refreshFind; land on the match
         // that now occupies this position (the next one).
         if !findMatches.isEmpty {
@@ -108,6 +108,6 @@ extension GridViewController {
             query: findBar.searchField.stringValue, replacement: replacement,
             options: findBar.options, rows: content.table.rows)
         guard !edits.isEmpty else { return }
-        document?.applyEdits(edits, actionName: "Replace All")
+        document?.applyEdits(edits, actionName: L("Replace All"))
     }
 }

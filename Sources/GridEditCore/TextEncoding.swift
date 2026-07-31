@@ -77,9 +77,16 @@ public enum CSVEngineError: Error, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .decodeFailed(let encoding):
-            return "The file could not be decoded as \(encoding.rawValue)."
+            return String(
+                format: NSLocalizedString(
+                    "The file could not be decoded as %@.", bundle: .module, comment: ""),
+                encoding.rawValue)
         case .encodeFailed(let encoding):
-            return "The text contains characters not representable in \(encoding.rawValue)."
+            return String(
+                format: NSLocalizedString(
+                    "The text contains characters not representable in %@.",
+                    bundle: .module, comment: ""),
+                encoding.rawValue)
         }
     }
 }

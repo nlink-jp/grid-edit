@@ -15,11 +15,11 @@ final class FindBarView: NSView, NSSearchFieldDelegate {
     let searchField = NSSearchField()
     let replaceField = NSTextField()
     private let matchLabel = NSTextField(labelWithString: "")
-    private let caseButton = FindBarView.toggle("Aa", tip: "Case sensitive")
-    private let regexButton = FindBarView.toggle(".*", tip: "Regular expression")
-    private let wholeCellButton = FindBarView.toggle("Cell", tip: "Whole cell")
-    private let replaceButton = NSButton(title: "Replace", target: nil, action: nil)
-    private let replaceAllButton = NSButton(title: "All", target: nil, action: nil)
+    private let caseButton = FindBarView.toggle("Aa", tip: L("Case sensitive"))
+    private let regexButton = FindBarView.toggle(".*", tip: L("Regular expression"))
+    private let wholeCellButton = FindBarView.toggle(L("Cell"), tip: L("Whole cell"))
+    private let replaceButton = NSButton(title: L("Replace"), target: nil, action: nil)
+    private let replaceAllButton = NSButton(title: L("All"), target: nil, action: nil)
 
     var options: FindOptions {
         FindOptions(
@@ -40,12 +40,12 @@ final class FindBarView: NSView, NSSearchFieldDelegate {
     init() {
         super.init(frame: .zero)
 
-        searchField.placeholderString = "Find"
+        searchField.placeholderString = L("Find")
         searchField.delegate = self
         searchField.sendsSearchStringImmediately = true
         searchField.widthAnchor.constraint(equalToConstant: 180).isActive = true
 
-        replaceField.placeholderString = "Replace"
+        replaceField.placeholderString = L("Replace")
         replaceField.delegate = self
         replaceField.widthAnchor.constraint(equalToConstant: 150).isActive = true
 
@@ -54,13 +54,13 @@ final class FindBarView: NSView, NSSearchFieldDelegate {
         matchLabel.textColor = .secondaryLabelColor
 
         let previousButton = NSButton(
-            image: NSImage(systemSymbolName: "chevron.up", accessibilityDescription: "Previous")!,
+            image: NSImage(systemSymbolName: "chevron.up", accessibilityDescription: L("Previous"))!,
             target: self, action: #selector(previousPressed))
         let nextButton = NSButton(
-            image: NSImage(systemSymbolName: "chevron.down", accessibilityDescription: "Next")!,
+            image: NSImage(systemSymbolName: "chevron.down", accessibilityDescription: L("Next"))!,
             target: self, action: #selector(nextPressed))
         let closeButton = NSButton(
-            image: NSImage(systemSymbolName: "xmark", accessibilityDescription: "Close")!,
+            image: NSImage(systemSymbolName: "xmark", accessibilityDescription: L("Close"))!,
             target: self, action: #selector(closePressed))
         for button in [previousButton, nextButton, closeButton] {
             button.bezelStyle = .texturedRounded
@@ -76,7 +76,7 @@ final class FindBarView: NSView, NSSearchFieldDelegate {
         replaceAllButton.target = self
         replaceAllButton.action = #selector(replaceAllPressed)
         replaceAllButton.bezelStyle = .texturedRounded
-        replaceAllButton.toolTip = "Replace all"
+        replaceAllButton.toolTip = L("Replace all")
 
         let stack = NSStackView(views: [
             searchField, caseButton, regexButton, wholeCellButton,

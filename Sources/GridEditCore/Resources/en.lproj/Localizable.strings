@@ -1,0 +1,3 @@
+"The file could not be decoded as %@." = "The file could not be decoded as %@.";
+"The text contains characters not representable in %@." = "The text contains characters not representable in %@.";
+"This file is %@; grid-edit opens files up to %@." = "This file is %@; grid-edit opens files up to %@.";

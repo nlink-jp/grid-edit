@@ -15,10 +15,10 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     /// Paste-confirmation hook; tests replace it. Returns true to proceed.
     var confirmPaste: ([PastePlanner.Concern]) -> Bool = { concerns in
         let alert = NSAlert()
-        alert.messageText = "Confirm paste"
+        alert.messageText = L("Confirm paste")
         alert.informativeText = concerns.map(\.message).joined(separator: "\n")
-        alert.addButton(withTitle: "Paste")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: L("Paste"))
+        alert.addButton(withTitle: L("Cancel"))
         return alert.runModal() == .alertFirstButtonReturn
     }
 
@@ -145,21 +145,21 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
     private func wireFormatBar() {
         formatBar.onEncodingChange = { [weak self] encoding in
-            self?.document?.performContentChange("Change Encoding") {
+            self?.document?.performContentChange(L("Change Encoding")) {
                 guard $0.encoding != encoding else { return false }
                 $0.encoding = encoding
                 return true
             }
         }
         formatBar.onDelimiterChange = { [weak self] delimiter in
-            self?.document?.performContentChange("Change Delimiter") {
+            self?.document?.performContentChange(L("Change Delimiter")) {
                 guard $0.delimiter != delimiter else { return false }
                 $0.delimiter = delimiter
                 return true
             }
         }
         formatBar.onLineEndingChange = { [weak self] lineEnding in
-            self?.document?.performContentChange("Change Line Ending") {
+            self?.document?.performContentChange(L("Change Line Ending")) {
                 guard $0.lineEnding != lineEnding else { return false }
                 $0.lineEnding = lineEnding
                 return true
@@ -168,7 +168,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         formatBar.onHeaderToggle = { [weak self] hasHeader in
             self?.commitEditIfNeeded()
             self?.document?.performContentChange(
-                hasHeader ? "Enable Header" : "Disable Header") {
+                hasHeader ? L("Enable Header") : L("Disable Header")) {
                 $0.setHasHeader(hasHeader)
             }
         }
@@ -382,7 +382,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         if commit && newValue != cellValue(at: position) {
             document?.applyEdits(
                 [CellEdit(row: position.row, column: position.column, value: newValue)],
-                actionName: "Edit Cell")
+                actionName: L("Edit Cell"))
         } else {
             reloadCell(at: position) // un-blank the label (cancel / unchanged)
         }
@@ -457,7 +457,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
     @objc func cut(_ sender: Any?) {
         copy(sender)
-        clearSelectedCells(actionName: "Cut")
+        clearSelectedCells(actionName: L("Cut"))
     }
 
     @objc func paste(_ sender: Any?) {
@@ -469,7 +469,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         if !plan.concerns.isEmpty && !confirmPaste(plan.concerns) {
             return
         }
-        document?.applyEdits(plan.edits, actionName: "Paste")
+        document?.applyEdits(plan.edits, actionName: L("Paste"))
         self.selection = plan.pastedSelection
     }
 
@@ -484,7 +484,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
             focus: GridPosition(row: rowCount - 1, column: columnCount - 1))
     }
 
-    func clearSelectedCells(actionName: String = "Clear") {
+    func clearSelectedCells(actionName: String = L("Clear")) {
         guard let selection else { return }
         var edits: [CellEdit] = []
         for row in selection.rowRange where row < rowCount {
@@ -599,9 +599,13 @@ extension PastePlanner.Concern {
     var message: String {
         switch self {
         case .shapeMismatch(let clipRows, let clipColumns, let selectionRows, let selectionColumns):
-            return "The clipboard (\(clipRows)×\(clipColumns)) doesn't match the selected \(selectionRows)×\(selectionColumns) range."
+            return String(
+                format: L("The clipboard (%d×%d) doesn't match the selected %d×%d range."),
+                clipRows, clipColumns, selectionRows, selectionColumns)
         case .extendsTable(let newRowCount, let newColumnCount):
-            return "The paste will extend the table to \(newRowCount) rows × \(newColumnCount) columns."
+            return String(
+                format: L("The paste will extend the table to %d rows × %d columns."),
+                newRowCount, newColumnCount)
         }
     }
 }

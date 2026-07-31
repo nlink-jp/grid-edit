@@ -1,0 +1,3 @@
+"The file could not be decoded as %@." = "このファイルは %@ としてデコードできませんでした。";
+"The text contains characters not representable in %@." = "テキストに %@ で表現できない文字が含まれています。";
+"This file is %@; grid-edit opens files up to %@." = "このファイルは %@ あります。grid-edit が開けるのは %@ までです。";
