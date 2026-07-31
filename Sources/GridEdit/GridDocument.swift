@@ -78,6 +78,33 @@ final class GridDocument: NSDocument {
         gridViewController?.contentDidChange(content)
     }
 
+    /// Applies a whole-content change (format settings, header toggle) as
+    /// one undoable action. DocumentContent is a CoW value, so the before/
+    /// after snapshots are cheap.
+    @discardableResult
+    func performContentChange(_ actionName: String, _ op: (inout DocumentContent) -> Bool) -> Bool {
+        let before = content
+        guard op(&content) else { return false }
+        let after = content
+        undoManager?.registerUndo(withTarget: self) { document in
+            document.applyContent(before, opposite: after, actionName: actionName)
+        }
+        undoManager?.setActionName(actionName)
+        gridViewController?.contentDidChange(content)
+        return true
+    }
+
+    private func applyContent(
+        _ value: DocumentContent, opposite: DocumentContent, actionName: String
+    ) {
+        content = value
+        undoManager?.registerUndo(withTarget: self) { document in
+            document.applyContent(opposite, opposite: value, actionName: actionName)
+        }
+        undoManager?.setActionName(actionName)
+        gridViewController?.contentDidChange(content)
+    }
+
     // MARK: Reading / writing
 
     override func read(from url: URL, ofType typeName: String) throws {

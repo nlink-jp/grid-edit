@@ -34,6 +34,8 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     var headerEditor: NSTextView?
     var headerEditingColumn: Int?
 
+    let formatBar = FormatBarView()
+
     /// Display line count per row (1 for single-line rows). Rows containing
     /// Alt+Enter newlines get proportionally taller rows via heightOfRow.
     private var rowLineCounts: [Int] = []
@@ -117,7 +119,8 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         scroll.documentView = tableView
 
         wireFindBar()
-        let stack = NSStackView(views: [findBar, scroll])
+        wireFormatBar()
+        let stack = NSStackView(views: [findBar, scroll, formatBar])
         stack.orientation = .vertical
         stack.spacing = 0
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -134,7 +137,39 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         ])
         view = container
 
+        formatBar.update(content: content)
         tableView.reloadData() // recompute row heights now that everything is wired
+    }
+
+    private func wireFormatBar() {
+        formatBar.onEncodingChange = { [weak self] encoding in
+            self?.document?.performContentChange("Change Encoding") {
+                guard $0.encoding != encoding else { return false }
+                $0.encoding = encoding
+                return true
+            }
+        }
+        formatBar.onDelimiterChange = { [weak self] delimiter in
+            self?.document?.performContentChange("Change Delimiter") {
+                guard $0.delimiter != delimiter else { return false }
+                $0.delimiter = delimiter
+                return true
+            }
+        }
+        formatBar.onLineEndingChange = { [weak self] lineEnding in
+            self?.document?.performContentChange("Change Line Ending") {
+                guard $0.lineEnding != lineEnding else { return false }
+                $0.lineEnding = lineEnding
+                return true
+            }
+        }
+        formatBar.onHeaderToggle = { [weak self] hasHeader in
+            self?.commitEditIfNeeded()
+            self?.document?.performContentChange(
+                hasHeader ? "Enable Header" : "Disable Header") {
+                $0.setHasHeader(hasHeader)
+            }
+        }
     }
 
     private func wireGridCallbacks() {
@@ -221,6 +256,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
             rows: content.table.rows, columnCount: columnCount)
         syncDataColumns()
         tableView.reloadData()
+        formatBar.update(content: content)
         refreshFind(jumpToFirst: false)
     }
 

@@ -45,12 +45,15 @@ input, focus, and menus behave like macOS, not like a web page.
   right-click → Auto-fit Width; content sampled above 20k rows)
 - **Numeric columns right-aligned** automatically (display only — values
   stay strings)
+- **Status bar** with the document's format settings — encoding,
+  delimiter (conversion on save), line ending, header row toggle
+  (promotes/demotes the first row) — all undoable, plus a rows × cols
+  readout
 - Maximum file size: 500 MB (larger files are refused with a clear error)
 
 ## Planned (Phase 2 — csv-editor parity)
 
-Status bar with save-time format selection (encoding / delimiter / line
-ending / header toggle), Open Recent, and window-frame persistence.
+Open Recent and window-frame persistence.
 
 By design, grid-edit is **not** a spreadsheet — no formulas, sheets, charts,
 xlsx/ods, or macros. Windows and Linux are not supported.

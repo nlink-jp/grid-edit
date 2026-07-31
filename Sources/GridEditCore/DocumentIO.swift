@@ -22,6 +22,24 @@ public struct DocumentContent: Equatable, Sendable {
         self.lineEnding = lineEnding
         self.hasHeader = hasHeader
     }
+
+    /// Toggles the header row, promoting the first data row to header
+    /// (on) or demoting the header into the data rows (off) — csv-editor
+    /// SET_HAS_HEADER semantics. Returns false when nothing changed.
+    @discardableResult
+    public mutating func setHasHeader(_ value: Bool) -> Bool {
+        guard value != hasHeader else { return false }
+        if value {
+            table.header = table.rows.isEmpty ? [] : table.rows.removeFirst()
+        } else {
+            if let header = table.header, !header.isEmpty {
+                table.rows.insert(header, at: 0)
+            }
+            table.header = nil
+        }
+        hasHeader = value
+        return true
+    }
 }
 
 /// Byte-level document open/save: detection on read, explicit settings on

@@ -35,6 +35,9 @@ All notable changes to this project will be documented in this file.
 - Header renaming (double-click the header or context menu), column
   auto-fit width (divider double-click or context menu, sampled above
   20k rows), automatic right-alignment for numeric columns
+- Status bar with undoable format settings (encoding, delimiter
+  conversion on save, line ending) and header row toggle, plus a
+  rows × cols readout
 - Main menu with standard File/Edit shortcuts
 - Project scaffold: SPM package (GridEditCore engine module + GridEdit app),
   Makefile build/sign/notarize pipeline, document-typed Info.plist,
