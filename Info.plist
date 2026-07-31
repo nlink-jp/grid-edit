@@ -32,7 +32,7 @@
                 <string>public.comma-separated-values-text</string>
             </array>
             <key>NSDocumentClass</key>
-            <string>GridEdit.GridDocument</string>
+            <string>GridDocument</string>
         </dict>
         <dict>
             <key>CFBundleTypeName</key>
@@ -46,7 +46,7 @@
                 <string>public.tab-separated-values-text</string>
             </array>
             <key>NSDocumentClass</key>
-            <string>GridEdit.GridDocument</string>
+            <string>GridDocument</string>
         </dict>
     </array>
     <key>NSHumanReadableCopyright</key>

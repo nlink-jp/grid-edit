@@ -37,15 +37,14 @@ final class GridDocument: NSDocument {
             backing: .buffered,
             defer: false
         )
+        window.contentViewController = GridViewController(content: content)
+        // contentViewController sizing follows the view's (empty) fitting
+        // size, collapsing the window to its title bar — force the geometry.
+        window.setContentSize(NSSize(width: 800, height: 600))
         window.center()
-        window.setFrameAutosaveName("GridDocumentWindow")
-        // Placeholder until the Phase 1 grid view lands: prove the pipeline
-        // by summarizing what DocumentIO detected.
-        let summary = "\(content.table.rows.count) rows × \(content.table.maxColumns) cols — "
-            + "\(content.encoding.rawValue) / \(content.delimiter.displayName) / \(content.lineEnding.rawValue)"
-        let label = NSTextField(labelWithString: summary)
-        label.alignment = .center
-        window.contentView = label
+        // State restoration (with proper frame persistence) is Phase 2 work;
+        // until then don't let macOS resurrect stale frames after a crash.
+        window.isRestorable = false
         addWindowController(NSWindowController(window: window))
     }
 }

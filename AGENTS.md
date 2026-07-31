@@ -62,8 +62,10 @@ assets/                     AppIcon-1024.png source (not yet added)
 
 ## Gotchas
 
-- `Info.plist` `NSDocumentClass` is `GridEdit.GridDocument`; the class is
-  `@objc(GridDocument)` — keep both in sync if renaming.
+- `Info.plist` `NSDocumentClass` must be the **runtime** class name
+  `GridDocument` (set by `@objc(GridDocument)`), not the Swift-qualified
+  `GridEdit.GridDocument` — the qualified form makes every document fail
+  with "No document could be created." Keep both in sync if renaming.
 - Signing: pure AppKit needs **no entitlements** — `codesign-darwin-app.sh`
   is called with the entitlements argument intentionally omitted (see
   CONVENTIONS.md §Native Swift / AppKit).
