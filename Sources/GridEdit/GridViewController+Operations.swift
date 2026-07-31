@@ -93,6 +93,22 @@ extension GridViewController {
             item.target = self
             menu.addItem(item)
         }
+        // Structural inserts are reachable from a plain cell selection too —
+        // not only from the row-number / header menus. Counts follow the
+        // selected span.
+        if let selection {
+            let rows = selection.rowRange
+            let columns = selection.columnRange
+            menu.addItem(.separator())
+            menu.addItem(item(LPlural(rows.count, one: "Insert Row Above", other: "Insert %d Rows Above")) {
+                [weak self] in self?.insertRows(rows, above: true) })
+            menu.addItem(item(LPlural(rows.count, one: "Insert Row Below", other: "Insert %d Rows Below")) {
+                [weak self] in self?.insertRows(rows, above: false) })
+            menu.addItem(item(LPlural(columns.count, one: "Insert Column Left", other: "Insert %d Columns Left")) {
+                [weak self] in self?.insertColumns(columns, left: true) })
+            menu.addItem(item(LPlural(columns.count, one: "Insert Column Right", other: "Insert %d Columns Right")) {
+                [weak self] in self?.insertColumns(columns, left: false) })
+        }
         return menu
     }
 

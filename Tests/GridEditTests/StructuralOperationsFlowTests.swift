@@ -111,6 +111,20 @@ final class StructuralOperationsFlowTests: XCTestCase {
         XCTAssertEqual(vc.selection?.rowRange, 2...2, "click outside selection retargets it")
     }
 
+    func testCellContextMenuOffersInserts() throws {
+        let (_, vc) = makeDocumentAndController()
+        vc.selection = GridSelection(
+            anchor: GridPosition(row: 0, column: 0),
+            focus: GridPosition(row: 1, column: 1))
+        let menu = try XCTUnwrap(vc.contextMenu(
+            for: GridTableView.GridHit(row: 0, dataColumn: 0)))
+        let titles = menu.items.map(\.title)
+        XCTAssertTrue(titles.contains(
+            LPlural(2, one: "Insert Row Above", other: "Insert %d Rows Above")))
+        XCTAssertTrue(titles.contains(
+            LPlural(2, one: "Insert Column Right", other: "Insert %d Columns Right")))
+    }
+
     func testHeaderContextMenuUsesSelectedColumns() throws {
         let (_, vc) = makeDocumentAndController(
             header: ["h1", "h2"], rows: [["a", "b"]])
