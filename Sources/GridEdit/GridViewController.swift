@@ -74,8 +74,12 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     // MARK: View construction
 
     override func loadView() {
-        tableView.dataSource = self
+        // delegate BEFORE dataSource: assigning the dataSource triggers an
+        // internal reload, and without the delegate in place every row's
+        // height is cached at the default 20 — multiline rows then display
+        // single-height until the next reload.
         tableView.delegate = self
+        tableView.dataSource = self
         tableView.allowsColumnReordering = false
         tableView.selectionHighlightStyle = .none
         tableView.usesAlternatingRowBackgroundColors = true
@@ -104,6 +108,8 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         // explicit frame the window collapses to the title bar (1×32).
         scroll.frame = NSRect(x: 0, y: 0, width: 800, height: 600)
         view = scroll
+
+        tableView.reloadData() // recompute row heights now that everything is wired
     }
 
     private func wireGridCallbacks() {
