@@ -38,6 +38,8 @@ All notable changes to this project will be documented in this file.
 - Status bar with undoable format settings (encoding, delimiter
   conversion on save, line ending) and header row toggle, plus a
   rows × cols readout
+- Open Recent (AppKit-managed), drag & drop CSV/TSV onto a window to
+  open, window position/size persistence with cascading
 - Main menu with standard File/Edit shortcuts
 - Project scaffold: SPM package (GridEditCore engine module + GridEdit app),
   Makefile build/sign/notarize pipeline, document-typed Info.plist,

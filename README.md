@@ -49,11 +49,13 @@ input, focus, and menus behave like macOS, not like a web page.
   delimiter (conversion on save), line ending, header row toggle
   (promotes/demotes the first row) — all undoable, plus a rows × cols
   readout
+- **Open Recent**, **drag & drop** a CSV/TSV anywhere on a window to
+  open it, and **window position/size remembered** across sessions
+  (additional windows cascade)
 - Maximum file size: 500 MB (larger files are refused with a clear error)
 
-## Planned (Phase 2 — csv-editor parity)
-
-Open Recent and window-frame persistence.
+Phase 2 (csv-editor feature parity) is complete — remaining work is
+release engineering (icon, packaging, migration notice).
 
 By design, grid-edit is **not** a spreadsheet — no formulas, sheets, charts,
 xlsx/ods, or macros. Windows and Linux are not supported.

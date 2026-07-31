@@ -127,7 +127,9 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
         // The window takes its initial size from this view — without an
         // explicit frame the window collapses to the title bar (1×32).
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        // DropContainerView also accepts CSV/TSV files dropped anywhere on
+        // the window and opens them as documents.
+        let container = DropContainerView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
         container.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),

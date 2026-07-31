@@ -136,17 +136,19 @@ final class GridDocument: NSDocument {
         )
         window.contentViewController = GridViewController(content: content, document: self)
         // contentViewController sizing follows the view's (empty) fitting
-        // size, collapsing the window to its title bar — force the geometry.
+        // size, collapsing the window to its title bar — force the geometry
+        // BEFORE the frame autosave name below restores a saved frame.
         window.setContentSize(NSSize(width: 800, height: 600))
         window.center()
-        // State restoration (with proper frame persistence) is Phase 2 work;
-        // until then don't let macOS resurrect stale frames after a crash.
-        window.isRestorable = false
         if let vc = window.contentViewController as? GridViewController {
             window.initialFirstResponder = vc.tableView
             window.makeFirstResponder(vc.tableView)
         }
-        addWindowController(NSWindowController(window: window))
+        let controller = NSWindowController(window: window)
+        // Remember position/size across sessions; additional windows cascade.
+        controller.shouldCascadeWindows = true
+        controller.windowFrameAutosaveName = "GridDocumentWindow"
+        addWindowController(controller)
     }
 }
 
