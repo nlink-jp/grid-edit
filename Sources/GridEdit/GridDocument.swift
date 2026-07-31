@@ -36,7 +36,7 @@ final class GridDocument: NSDocument {
             document.revertEdits(undo, redo: edits, actionName: actionName)
         }
         undoManager?.setActionName(actionName)
-        gridViewController?.contentDidChange(content)
+        gridViewController?.contentDidChange(content, changedRows: Set(edits.map(\.row)))
     }
 
     private func revertEdits(_ undo: CSVTable.EditUndo, redo: [CellEdit], actionName: String) {
@@ -45,7 +45,8 @@ final class GridDocument: NSDocument {
             document.applyEdits(redo, actionName: actionName)
         }
         undoManager?.setActionName(actionName)
-        gridViewController?.contentDidChange(content)
+        gridViewController?.contentDidChange(
+            content, changedRows: Set(undo.oldRows.map(\.index)))
     }
 
     // MARK: Reading / writing

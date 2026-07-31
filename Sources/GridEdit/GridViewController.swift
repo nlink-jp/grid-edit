@@ -25,11 +25,35 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     private var cellEditor: NSTextView?
     private var editingPosition: GridPosition?
 
+    /// Display line count per row (1 for single-line rows). Rows containing
+    /// Alt+Enter newlines get proportionally taller rows via heightOfRow.
+    private var rowLineCounts: [Int] = []
+
     private static let rowNumberColumnID = NSUserInterfaceItemIdentifier("gridedit.rownumber")
     private static let cellID = NSUserInterfaceItemIdentifier("gridedit.cell")
     private static let rowNumberCellID = NSUserInterfaceItemIdentifier("gridedit.rownumbercell")
     private static let cellFont = NSFont.monospacedDigitSystemFont(
         ofSize: NSFont.systemFontSize(for: .small), weight: .regular)
+    static let baseRowHeight: CGFloat = 20
+    private static let lineHeight: CGFloat = 16
+
+    /// Longest explicit-newline line count among the row's cells.
+    /// Width-based wrapping deliberately doesn't count (display uses
+    /// clipping, not wrapping, so height only depends on the data).
+    static func lineCount(of cells: [String]) -> Int {
+        var maxLines = 1
+        for cell in cells where cell.contains("\n") {
+            let lines = cell.reduce(into: 1) { count, ch in
+                if ch == "\n" { count += 1 }
+            }
+            if lines > maxLines { maxLines = lines }
+        }
+        return maxLines
+    }
+
+    static func rowHeight(forLineCount lines: Int) -> CGFloat {
+        baseRowHeight + CGFloat(max(0, lines - 1)) * lineHeight
+    }
 
     init(content: DocumentContent, document: GridDocument? = nil) {
         self.content = content
@@ -55,6 +79,8 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         tableView.style = .plain
         tableView.rowHeight = 20
         tableView.columnAutoresizingStyle = .noColumnAutoresizing
+
+        rebuildRowLineCounts()
 
         let rowNumber = NSTableColumn(identifier: Self.rowNumberColumnID)
         rowNumber.title = ""
@@ -144,11 +170,26 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
     // MARK: Content updates
 
-    /// Called by the document after every model mutation.
-    func contentDidChange(_ newContent: DocumentContent) {
+    /// Called by the document after every model mutation. `changedRows`
+    /// limits the line-count cache update; nil rebuilds it entirely.
+    func contentDidChange(_ newContent: DocumentContent, changedRows: Set<Int>? = nil) {
         content = newContent
+        rebuildRowLineCounts(changedRows: changedRows)
         syncDataColumns()
         tableView.reloadData()
+    }
+
+    private func rebuildRowLineCounts(changedRows: Set<Int>? = nil) {
+        if let changedRows, rowLineCounts.count <= rowCount {
+            while rowLineCounts.count < rowCount {
+                rowLineCounts.append(1)
+            }
+            for row in changedRows where row < rowCount {
+                rowLineCounts[row] = Self.lineCount(of: content.table.rows[row])
+            }
+        } else {
+            rowLineCounts = content.table.rows.map(Self.lineCount(of:))
+        }
     }
 
     private func syncDataColumns() {
@@ -195,8 +236,39 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         tableView.addSubview(editor)
         cellEditor = editor
         editingPosition = focus
+        reloadCell(at: focus) // blank the label under the editor
+        sizeEditorToFit()
         view.window?.makeFirstResponder(editor)
         editor.selectAll(nil)
+    }
+
+    private func reloadCell(at position: GridPosition) {
+        tableView.reloadData(
+            forRowIndexes: IndexSet(integer: position.row),
+            columnIndexes: IndexSet(integer: position.column + 1))
+    }
+
+    /// Grows the editor overlay downward to fit its content (multi-line
+    /// values from Alt+Enter). It may overlap the rows below while editing —
+    /// the committed row height follows via heightOfRow.
+    private func sizeEditorToFit() {
+        guard let editor = cellEditor, let position = editingPosition,
+              let layoutManager = editor.layoutManager,
+              let textContainer = editor.textContainer else { return }
+        layoutManager.ensureLayout(for: textContainer)
+        let used = layoutManager.usedRect(for: textContainer).height
+            + editor.textContainerInset.height * 2
+        let cellHeight = tableView
+            .frameOfCell(atColumn: position.column + 1, row: position.row)
+            .insetBy(dx: -1, dy: -1).height
+        let target = max(cellHeight, used + 4)
+        if abs(editor.frame.height - target) > 0.5 {
+            editor.setFrameSize(NSSize(width: editor.frame.width, height: target))
+        }
+    }
+
+    func textDidChange(_ notification: Notification) {
+        sizeEditorToFit()
     }
 
     private func cellValue(at position: GridPosition) -> String {
@@ -217,6 +289,8 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
             document?.applyEdits(
                 [CellEdit(row: position.row, column: position.column, value: newValue)],
                 actionName: "Edit Cell")
+        } else {
+            reloadCell(at: position) // un-blank the label (cancel / unchanged)
         }
     }
 
@@ -358,6 +432,11 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         rowCount
     }
 
+    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+        guard row < rowLineCounts.count else { return Self.baseRowHeight }
+        return Self.rowHeight(forLineCount: rowLineCounts[row])
+    }
+
     // MARK: NSTableViewDelegate
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
@@ -374,7 +453,10 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
         let label = reusableLabel(Self.cellID)
         let cells = content.table.rows[row]
-        label.stringValue = index < cells.count ? cells[index] : ""
+        // Blank the cell being edited so the editor overlay isn't
+        // double-drawn on top of the label.
+        let isEditing = editingPosition == GridPosition(row: row, column: index)
+        label.stringValue = isEditing ? "" : (index < cells.count ? cells[index] : "")
         label.alignment = .natural
         label.textColor = .labelColor
         let selected = selection?.contains(row: row, column: index) ?? false
@@ -392,9 +474,12 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         let label = NSTextField(labelWithString: "")
         label.identifier = identifier
         label.font = Self.cellFont
-        label.lineBreakMode = .byTruncatingTail
-        label.usesSingleLineMode = true
-        label.cell?.truncatesLastVisibleLine = true
+        // Multi-line cells (Alt+Enter) render their explicit newlines;
+        // long lines clip instead of wrapping so row height only depends
+        // on the data's newline count, never on column width.
+        label.lineBreakMode = .byClipping
+        label.usesSingleLineMode = false
+        label.maximumNumberOfLines = 0
         return label
     }
 }

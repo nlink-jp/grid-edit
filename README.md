@@ -24,6 +24,8 @@ input, focus, and menus behave like macOS, not like a web page.
 - **Cell editing on the native text system** — Enter during Japanese IME
   composition commits the composition, never the cell; Alt+Enter inserts
   an in-cell newline; Esc cancels; Tab / Enter commit and move
+- **Multi-line cells render fully**: rows grow to fit their cells'
+  newlines, and the editor grows while you type
 - **TSV clipboard** (Excel-compatible): copy writes quoted TSV; pasting
   into a single cell expands across cells; shape mismatches and pastes
   that would grow the table ask for confirmation first

@@ -16,6 +16,9 @@ All notable changes to this project will be documented in this file.
   Cmd+A) and keyboard navigation
 - Cell editing on the native text system (IME-safe Enter, Alt+Enter in-cell
   newline, Esc cancel, Tab/Enter commit-and-move)
+- Variable row heights: rows grow to show every explicit newline in their
+  cells; the cell editor grows with its content and the underlying label
+  is blanked while editing (no double-drawn text)
 - TSV clipboard: quoted Excel-compatible copy, paste expansion from a
   single cell, confirmation on shape mismatch or table growth
 - Undo / Redo through NSDocument's undo manager (batch edits = one step)
