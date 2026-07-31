@@ -19,7 +19,8 @@ let package = Package(
         .testTarget(
             name: "GridEditCoreTests",
             dependencies: ["GridEditCore"],
-            path: "Tests/GridEditCoreTests"
+            path: "Tests/GridEditCoreTests",
+            resources: [.copy("testdata")]
         ),
         .testTarget(
             name: "GridEditTests",
