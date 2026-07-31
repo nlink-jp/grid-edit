@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.1.0] - 2026-08-01
+
+First release. Native macOS successor to
+[csv-editor](https://github.com/nlink-jp/csv-editor) with full feature
+parity (Phase 1 + Phase 2 of the RFP).
 
 ### Added
 
