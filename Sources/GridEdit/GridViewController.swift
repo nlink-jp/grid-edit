@@ -25,6 +25,10 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     private var cellEditor: NSTextView?
     private var editingPosition: GridPosition?
 
+    let findBar = FindBarView()
+    var findMatches: [FindMatch] = []
+    var findCurrentIndex: Int?
+
     /// Display line count per row (1 for single-line rows). Rows containing
     /// Alt+Enter newlines get proportionally taller rows via heightOfRow.
     private var rowLineCounts: [Int] = []
@@ -104,10 +108,24 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         scroll.hasHorizontalScroller = true
         scroll.autohidesScrollers = true
         scroll.documentView = tableView
+
+        wireFindBar()
+        let stack = NSStackView(views: [findBar, scroll])
+        stack.orientation = .vertical
+        stack.spacing = 0
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
         // The window takes its initial size from this view — without an
         // explicit frame the window collapses to the title bar (1×32).
-        scroll.frame = NSRect(x: 0, y: 0, width: 800, height: 600)
-        view = scroll
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: container.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        view = container
 
         tableView.reloadData() // recompute row heights now that everything is wired
     }
@@ -193,6 +211,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         rebuildRowLineCounts(changedRows: changedRows)
         syncDataColumns()
         tableView.reloadData()
+        refreshFind(jumpToFirst: false)
     }
 
     private func rebuildRowLineCounts(changedRows: Set<Int>? = nil) {

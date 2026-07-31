@@ -28,6 +28,10 @@ All notable changes to this project will be documented in this file.
 - Column sort: ascending/descending from the header context menu,
   multi-key across a column selection, numeric auto-detection
   (csv-editor sort semantics)
+- Find & Replace: ⌘F / ⌥⌘F bar with incremental search, match count,
+  ⌘G/⇧⌘G navigation with wrap-around, case/regex/whole-cell options,
+  replace one / replace all (single undo step). macOS-native bindings
+  (⌥⌘F instead of csv-editor's Ctrl+H, which is Hide on macOS)
 - Main menu with standard File/Edit shortcuts
 - Project scaffold: SPM package (GridEditCore engine module + GridEdit app),
   Makefile build/sign/notarize pipeline, document-typed Info.plist,

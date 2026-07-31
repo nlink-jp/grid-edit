@@ -64,6 +64,21 @@ enum MainMenu {
         editMenu.addItem(.separator())
         editMenu.addItem(withTitle: "Select All",
                          action: #selector(NSResponder.selectAll(_:)), keyEquivalent: "a")
+        editMenu.addItem(.separator())
+        editMenu.addItem(withTitle: "Find…",
+                         action: #selector(GridViewController.performTextFinderShow(_:)),
+                         keyEquivalent: "f")
+        let findReplace = editMenu.addItem(
+            withTitle: "Find and Replace…",
+            action: #selector(GridViewController.performTextFinderShowReplace(_:)),
+            keyEquivalent: "f")
+        findReplace.keyEquivalentModifierMask = [.command, .option]
+        editMenu.addItem(withTitle: "Find Next",
+                         action: #selector(GridViewController.findNext(_:)), keyEquivalent: "g")
+        let findPrevious = editMenu.addItem(
+            withTitle: "Find Previous",
+            action: #selector(GridViewController.findPrevious(_:)), keyEquivalent: "g")
+        findPrevious.keyEquivalentModifierMask = [.command, .shift]
         addSubmenu(editMenu, title: "Edit", to: main)
 
         // Window menu

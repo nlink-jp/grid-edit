@@ -36,6 +36,10 @@ input, focus, and menus behave like macOS, not like a web page.
 - **Sort** (right-click a column header): ascending / descending,
   multi-key when multiple columns are selected, numeric vs string
   auto-detected per pair
+- **Find & Replace** (⌘F find, ⌥⌘F replace — the macOS-native binding;
+  csv-editor's Ctrl+H means Hide here): incremental search with match
+  count, ⌘G / ⇧⌘G next/previous with wrap-around, case-sensitive /
+  regex / whole-cell options, Replace one or All (one undo step)
 - Maximum file size: 500 MB (larger files are refused with a clear error)
 
 ## Planned (Phase 2 — csv-editor parity)
