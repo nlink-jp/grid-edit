@@ -1,22 +1,33 @@
 import AppKit
 import GridEditCore
 
-/// The CSV/TSV document. Scaffold state: holds the raw file bytes and shows a
-/// placeholder window. Phase 1 replaces the storage with the GridEditCore
-/// table model (encoding / delimiter / line-ending aware) and the placeholder
-/// view with the NSTableView grid.
+/// The CSV/TSV document. All byte-level work (detection, parse, serialize,
+/// size cap) lives in GridEditCore.DocumentIO; this class is AppKit glue.
 @objc(GridDocument)
 final class GridDocument: NSDocument {
-    private var rawData = Data()
+    var content = DocumentContent()
 
     override class var autosavesInPlace: Bool { false }
 
-    override func data(ofType typeName: String) throws -> Data {
-        rawData
+    override class func canConcurrentlyReadDocuments(ofType typeName: String) -> Bool {
+        true
+    }
+
+    override func read(from url: URL, ofType typeName: String) throws {
+        // Refuse oversized files before their bytes are loaded into memory.
+        let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+        guard size <= DocumentIO.maxFileSize else {
+            throw DocumentIO.DocumentError.tooLarge(byteCount: size)
+        }
+        try super.read(from: url, ofType: typeName)
     }
 
     override func read(from data: Data, ofType typeName: String) throws {
-        rawData = data
+        content = try DocumentIO.read(data, filename: fileURL?.lastPathComponent)
+    }
+
+    override func data(ofType typeName: String) throws -> Data {
+        try DocumentIO.write(content)
     }
 
     override func makeWindowControllers() {
@@ -27,9 +38,24 @@ final class GridDocument: NSDocument {
             defer: false
         )
         window.center()
-        let label = NSTextField(labelWithString: "grid-edit scaffold — Phase 1 grid lands here")
+        window.setFrameAutosaveName("GridDocumentWindow")
+        // Placeholder until the Phase 1 grid view lands: prove the pipeline
+        // by summarizing what DocumentIO detected.
+        let summary = "\(content.table.rows.count) rows × \(content.table.maxColumns) cols — "
+            + "\(content.encoding.rawValue) / \(content.delimiter.displayName) / \(content.lineEnding.rawValue)"
+        let label = NSTextField(labelWithString: summary)
         label.alignment = .center
         window.contentView = label
         addWindowController(NSWindowController(window: window))
+    }
+}
+
+extension Delimiter {
+    var displayName: String {
+        switch self {
+        case .comma: return "Comma"
+        case .tab: return "Tab"
+        case .semicolon: return "Semicolon"
+        }
     }
 }
