@@ -2,13 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.2.0] - 2026-08-01
 
 ### Added
 
 - UI localization (English / Japanese): menus, context menus, find and
   format bars, dialogs, undo action names, and error messages follow the
   system (or per-app) language via standard `.lproj` bundles
+- Header click selects the whole column (Shift+click extends); the
+  divider hot zone keeps drag-resize and double-click auto-fit
+- Finder-style sort indicator on the sorted columns' headers, cleared by
+  any mutation that could break the order
+- Cell context menu offers Insert Row Above/Below and Insert Column
+  Left/Right (counts follow the selected span)
+
+### Changed
+
+- Edit menu now says "Clear Contents", matching the cell context menu
+  (the action empties cells; it never removes rows/columns)
+
+### Fixed
+
+- Selection highlight reaches the vertical grid lines (was inset by the
+  intercell spacing) and tracks live column resizing
+- Selection highlight is suppressed while a cell editor is open
+- Clicks on empty grid area commit an open cell/header editor instead
+  of being ignored
+- Find/format bars have fixed heights — controls are no longer clipped
 
 ## [0.1.0] - 2026-08-01
 

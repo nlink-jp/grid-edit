@@ -20,7 +20,8 @@ input, focus, and menus behave like macOS, not like a web page.
 - Virtualized native grid (hundreds of thousands of rows) with row numbers
   and header-row column titles
 - **Rectangular range selection**: mouse drag, Shift+click, Shift+arrows,
-  Cmd+arrow to the edge, Cmd+A
+  Cmd+arrow to the edge, Cmd+A; row-number click selects the row,
+  header click selects the column
 - **Cell editing on the native text system** — Enter during Japanese IME
   composition commits the composition, never the cell; Alt+Enter inserts
   an in-cell newline; Esc cancels; Tab / Enter commit and move
@@ -35,7 +36,7 @@ input, focus, and menus behave like macOS, not like a web page.
   delete — all undoable
 - **Sort** (right-click a column header): ascending / descending,
   multi-key when multiple columns are selected, numeric vs string
-  auto-detected per pair
+  auto-detected per pair, with the standard header sort indicator
 - **Find & Replace** (⌘F find, ⌥⌘F replace — the macOS-native binding;
   csv-editor's Ctrl+H means Hide here): incremental search with match
   count, ⌘G / ⇧⌘G next/previous with wrap-around, case-sensitive /
