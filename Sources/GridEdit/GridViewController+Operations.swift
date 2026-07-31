@@ -38,6 +38,21 @@ extension GridViewController {
             focus: GridPosition(row: max(0, rowCount - 1), column: columns.upperBound))
     }
 
+    /// Header body click: select the whole column; Shift+click extends the
+    /// column selection from the current anchor column.
+    func selectColumn(_ column: Int, extending: Bool) {
+        commitEditIfNeeded()
+        guard rowCount > 0 else { return }
+        if extending, let current = selection {
+            selection = GridSelection(
+                anchor: GridPosition(row: 0, column: current.anchor.column),
+                focus: GridPosition(row: max(0, rowCount - 1), column: column))
+        } else {
+            selection = fullColumnSelection(column...column)
+        }
+        view.window?.makeFirstResponder(tableView)
+    }
+
     /// Rows the operation applies to: the selection when the click lands
     /// inside it, otherwise the clicked row (which becomes the selection).
     private func targetRows(clicked row: Int) -> ClosedRange<Int> {

@@ -197,6 +197,9 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
         let header = GridTableView.HeaderView()
         header.onMenu = { [weak self] dataColumn in self?.headerContextMenu(forColumn: dataColumn) }
+        header.onClick = { [weak self] dataColumn, extending in
+            self?.selectColumn(dataColumn, extending: extending)
+        }
         header.onDoubleClick = { [weak self] dataColumn in self?.beginHeaderRename(column: dataColumn) }
         tableView.headerView = header
     }

@@ -39,10 +39,13 @@ final class GridTableView: NSTableView {
 
     override var acceptsFirstResponder: Bool { true }
 
-    /// Header view that forwards right-clicks and double-clicks per data
-    /// column.
+    /// Header view that forwards clicks (column selection), double-clicks
+    /// (rename) and right-clicks (menu) per data column, while leaving the
+    /// divider region to NSTableHeaderView so drag-resize and
+    /// double-click-to-auto-fit keep working.
     final class HeaderView: NSTableHeaderView {
         var onMenu: ((Int) -> NSMenu?)?
+        var onClick: ((Int, _ extending: Bool) -> Void)?
         var onDoubleClick: ((Int) -> Void)?
 
         private func dataColumn(for event: NSEvent) -> Int? {
@@ -52,17 +55,34 @@ final class GridTableView: NSTableView {
             return GridViewController.dataColumnIndex(of: tableView.tableColumns[columnIndex])
         }
 
+        /// Within the resize hot zone next to a column edge.
+        private func isNearDivider(_ event: NSEvent) -> Bool {
+            let point = convert(event.locationInWindow, from: nil)
+            let columnIndex = column(at: point)
+            guard columnIndex >= 0 else { return false }
+            let rect = headerRect(ofColumn: columnIndex)
+            return point.x - rect.minX < 4 || rect.maxX - point.x < 4
+        }
+
         override func menu(for event: NSEvent) -> NSMenu? {
             guard let column = dataColumn(for: event) else { return nil }
             return onMenu?(column)
         }
 
         override func mouseDown(with event: NSEvent) {
-            if event.clickCount == 2, let column = dataColumn(for: event) {
-                onDoubleClick?(column)
+            if isNearDivider(event) {
+                super.mouseDown(with: event) // divider: resize / auto-fit
                 return
             }
-            super.mouseDown(with: event) // keeps divider drag-resizing working
+            guard let column = dataColumn(for: event) else {
+                super.mouseDown(with: event)
+                return
+            }
+            if event.clickCount == 2 {
+                onDoubleClick?(column)
+            } else {
+                onClick?(column, event.modifierFlags.contains(.shift))
+            }
         }
     }
 
