@@ -238,6 +238,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         editor.layer?.borderColor = NSColor.controlAccentColor.cgColor
         editor.layer?.borderWidth = 2
         tableView.addSubview(editor)
+        tableView.overlayEditor = editor
         cellEditor = editor
         editingPosition = focus
         reloadCell(at: focus) // blank the label under the editor
@@ -286,6 +287,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         guard let editor = cellEditor, let position = editingPosition else { return }
         cellEditor = nil
         editingPosition = nil
+        tableView.overlayEditor = nil
         let newValue = editor.string
         editor.removeFromSuperview()
         view.window?.makeFirstResponder(tableView)

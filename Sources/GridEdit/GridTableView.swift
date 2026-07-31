@@ -19,6 +19,20 @@ final class GridTableView: NSTableView {
     var onClearCells: (() -> Void)?
     var onPage: ((_ down: Bool) -> Void)?
 
+    /// The cell-editor overlay, kept above the row views. reloadData
+    /// rebuilds row views lazily on the next layout pass, which would
+    /// otherwise stack them over an editor added in the same event cycle
+    /// (symptom: double-click shows a blank cell and no editor).
+    weak var overlayEditor: NSView?
+
+    override func didAddSubview(_ subview: NSView) {
+        super.didAddSubview(subview)
+        if let overlayEditor, subview !== overlayEditor,
+           overlayEditor.superview === self {
+            addSubview(overlayEditor, positioned: .above, relativeTo: nil)
+        }
+    }
+
     override var acceptsFirstResponder: Bool { true }
 
     private func gridHit(for event: NSEvent) -> GridHit? {
