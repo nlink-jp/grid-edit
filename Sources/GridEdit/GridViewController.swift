@@ -598,7 +598,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
                 view.identifier = Self.rowViewID
                 return view
             }()
-        rowView.selectionSpan = selectionSpan(forRow: row)
+        rowView.spanProvider = { [weak self] in self?.selectionSpan(forRow: row) }
         return rowView
     }
 
@@ -620,10 +620,11 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
             width: lastRect.maxX - firstRect.minX, height: 0)
     }
 
-    /// Column widths changed: recompute the spans of the visible row views.
+    /// Geometry or editing state changed: repaint the visible row views
+    /// (their spans are computed at draw time).
     func refreshSelectionSpans() {
-        tableView.enumerateAvailableRowViews { rowView, row in
-            (rowView as? GridRowView)?.selectionSpan = selectionSpan(forRow: row)
+        tableView.enumerateAvailableRowViews { rowView, _ in
+            rowView.needsDisplay = true
         }
     }
 

@@ -36,15 +36,22 @@ final class SelectionHighlightTests: XCTestCase {
         XCTAssertNil(vc.selectionSpan(forRow: 0))
     }
 
-    func testRowViewCarriesSpan() throws {
+    func testRowViewComputesSpanLive() throws {
         let vc = makeController()
         vc.selection = GridSelection(anchor: GridPosition(row: 1, column: 2))
         let rowView = try XCTUnwrap(
             vc.tableView(vc.tableView, rowViewForRow: 1) as? GridRowView)
-        XCTAssertNotNil(rowView.selectionSpan)
+        XCTAssertNotNil(rowView.spanProvider?() as? NSRect)
         let unselected = try XCTUnwrap(
             vc.tableView(vc.tableView, rowViewForRow: 0) as? GridRowView)
-        XCTAssertNil(unselected.selectionSpan)
+        XCTAssertNil(unselected.spanProvider?() ?? nil)
+
+        // Live geometry: widening a column shifts the span the provider
+        // returns — no cache to go stale during a resize drag.
+        let before = try XCTUnwrap(rowView.spanProvider?() ?? nil)
+        vc.tableView.tableColumns[1].width += 50
+        let after = try XCTUnwrap(rowView.spanProvider?() ?? nil)
+        XCTAssertEqual(after.minX, before.minX + 50)
     }
 
     func testCellLabelNeverDrawsBackground() throws {
