@@ -344,6 +344,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         cellEditor = editor
         editingPosition = focus
         reloadCell(at: focus) // blank the label under the editor
+        refreshSelectionSpans() // hide the selection highlight while editing
         sizeEditorToFit()
         view.window?.makeFirstResponder(editor)
         editor.selectAll(nil)
@@ -400,6 +401,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         } else {
             reloadCell(at: position) // un-blank the label (cancel / unchanged)
         }
+        refreshSelectionSpans() // restore the selection highlight
     }
 
     func commitEditIfNeeded() {
@@ -578,8 +580,11 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
     /// Table-coordinate x-span the selection covers in `row` — the full
     /// column rects including intercell spacing, so the highlight touches
-    /// the vertical grid lines.
+    /// the vertical grid lines. Suppressed while a cell edit is in
+    /// progress: the editor overlay is the focus then, and a highlight
+    /// peeking out around it looks wrong.
     func selectionSpan(forRow row: Int) -> NSRect? {
+        guard editingPosition == nil else { return nil }
         guard let selection, selection.rowRange.contains(row) else { return nil }
         let first = selection.columnRange.lowerBound + 1 // + row-number column
         let last = min(selection.columnRange.upperBound + 1, tableView.tableColumns.count - 1)
