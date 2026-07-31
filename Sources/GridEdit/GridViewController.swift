@@ -194,6 +194,10 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         tableView.onPage = { [weak self] down in self?.pageSelection(down: down) }
         tableView.onMoveBlock = { [weak self] direction in self?.moveBlock(direction) }
         tableView.onContextMenu = { [weak self] hit in self?.contextMenu(for: hit) }
+        tableView.onBackgroundClick = { [weak self] in
+            self?.commitEditIfNeeded()
+            self?.endHeaderRename(commit: true)
+        }
 
         let header = GridTableView.HeaderView()
         header.onMenu = { [weak self] dataColumn in self?.headerContextMenu(forColumn: dataColumn) }

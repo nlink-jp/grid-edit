@@ -22,6 +22,8 @@ final class GridTableView: NSTableView {
     var onMoveBlock: ((GridSelection.Direction) -> Void)?
     /// Right-click in the grid body.
     var onContextMenu: ((GridHit) -> NSMenu?)?
+    /// Click on empty grid area (below the rows / right of the columns).
+    var onBackgroundClick: (() -> Void)?
 
     /// The cell-editor overlay, kept above the row views. reloadData
     /// rebuilds row views lazily on the next layout pass, which would
@@ -97,7 +99,12 @@ final class GridTableView: NSTableView {
     }
 
     override func mouseDown(with event: NSEvent) {
-        guard let hit = gridHit(for: event) else { return }
+        guard let hit = gridHit(for: event) else {
+            // Empty area: not a cell, but the click must still end an open
+            // edit session — swallowing it makes editing feel stuck.
+            onBackgroundClick?()
+            return
+        }
         if event.clickCount == 2 && hit.dataColumn != nil {
             onSelect?(hit, false)
             onBeginEdit?()
