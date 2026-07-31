@@ -29,6 +29,11 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     var findMatches: [FindMatch] = []
     var findCurrentIndex: Int?
 
+    /// Per-column numeric flags (display-only right alignment).
+    var numericColumns: [Bool] = []
+    var headerEditor: NSTextView?
+    var headerEditingColumn: Int?
+
     /// Display line count per row (1 for single-line rows). Rows containing
     /// Alt+Enter newlines get proportionally taller rows via heightOfRow.
     private var rowLineCounts: [Int] = []
@@ -93,6 +98,8 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         tableView.columnAutoresizingStyle = .noColumnAutoresizing
 
         rebuildRowLineCounts()
+        numericColumns = ColumnTyping.inferNumericColumns(
+            rows: content.table.rows, columnCount: columnCount)
 
         let rowNumber = NSTableColumn(identifier: Self.rowNumberColumnID)
         rowNumber.title = ""
@@ -153,6 +160,7 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
         let header = GridTableView.HeaderView()
         header.onMenu = { [weak self] dataColumn in self?.headerContextMenu(forColumn: dataColumn) }
+        header.onDoubleClick = { [weak self] dataColumn in self?.beginHeaderRename(column: dataColumn) }
         tableView.headerView = header
     }
 
@@ -209,6 +217,8 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     func contentDidChange(_ newContent: DocumentContent, changedRows: Set<Int>? = nil) {
         content = newContent
         rebuildRowLineCounts(changedRows: changedRows)
+        numericColumns = ColumnTyping.inferNumericColumns(
+            rows: content.table.rows, columnCount: columnCount)
         syncDataColumns()
         tableView.reloadData()
         refreshFind(jumpToFirst: false)
@@ -347,6 +357,18 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     // MARK: NSTextViewDelegate (cell editor)
 
     func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+        if textView === headerEditor {
+            switch selector {
+            case #selector(NSResponder.insertNewline(_:)), #selector(NSResponder.insertTab(_:)):
+                endHeaderRename(commit: true)
+                return true
+            case #selector(NSResponder.cancelOperation(_:)):
+                endHeaderRename(commit: false)
+                return true
+            default:
+                return false
+            }
+        }
         guard textView === cellEditor else { return false }
         switch selector {
         case #selector(NSResponder.insertNewline(_:)):
@@ -377,6 +399,10 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
     func textDidEndEditing(_ notification: Notification) {
         // Focus moved elsewhere (click outside, window switch): commit.
+        if (notification.object as? NSTextView) === headerEditor {
+            endHeaderRename(commit: true)
+            return
+        }
         endEdit(commit: true)
     }
 
@@ -503,7 +529,8 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         // double-drawn on top of the label.
         let isEditing = editingPosition == GridPosition(row: row, column: index)
         label.stringValue = isEditing ? "" : (index < cells.count ? cells[index] : "")
-        label.alignment = .natural
+        label.alignment = index < numericColumns.count && numericColumns[index]
+            ? .right : .natural
         label.textColor = .labelColor
         let selected = selection?.contains(row: row, column: index) ?? false
         label.drawsBackground = selected

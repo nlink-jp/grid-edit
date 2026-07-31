@@ -111,6 +111,18 @@ extension GridViewController {
         menu.addItem(item("Sort Ascending") { [weak self] in self?.sortByColumns(columns, ascending: true) })
         menu.addItem(item("Sort Descending") { [weak self] in self?.sortByColumns(columns, ascending: false) })
         menu.addItem(.separator())
+        if content.hasHeader {
+            menu.addItem(item("Rename Column…") { [weak self] in
+                self?.beginHeaderRename(column: column)
+            })
+        }
+        menu.addItem(item("Auto-fit Width") { [weak self] in
+            guard let self else { return }
+            for column in columns {
+                self.autoFitColumn(column)
+            }
+        })
+        menu.addItem(.separator())
         menu.addItem(item("Delete \(noun)") { [weak self] in self?.deleteColumns(columns) })
         return menu
     }
@@ -218,5 +230,106 @@ extension GridViewController {
         case .left: moveColumns(selection.columnRange, left: true)
         case .right: moveColumns(selection.columnRange, left: false)
         }
+    }
+
+    // MARK: Header rename
+
+    /// Inline header rename via the same NSTextView-overlay pattern as the
+    /// cell editor (see AGENTS.md gotchas for why not NSTextField).
+    func beginHeaderRename(column: Int) {
+        guard content.hasHeader, headerEditor == nil,
+              let headerView = tableView.headerView else { return }
+        commitEditIfNeeded()
+        let tableColumnIndex = column + 1
+        guard tableColumnIndex < tableView.tableColumns.count else { return }
+
+        let frame = headerView.headerRect(ofColumn: tableColumnIndex)
+        let editor = NSTextView(frame: frame.insetBy(dx: 1, dy: 1))
+        editor.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize, weight: .medium)
+        let currentHeader = content.table.header ?? []
+        editor.string = column < currentHeader.count ? currentHeader[column] : ""
+        editor.delegate = self
+        editor.isRichText = false
+        editor.allowsUndo = true
+        editor.drawsBackground = true
+        editor.backgroundColor = .textBackgroundColor
+        editor.textContainerInset = NSSize(width: 0, height: 2)
+        editor.wantsLayer = true
+        editor.layer?.borderColor = NSColor.controlAccentColor.cgColor
+        editor.layer?.borderWidth = 2
+        headerView.addSubview(editor)
+        headerEditor = editor
+        headerEditingColumn = column
+        view.window?.makeFirstResponder(editor)
+        editor.selectAll(nil)
+    }
+
+    func endHeaderRename(commit: Bool) {
+        guard let editor = headerEditor, let column = headerEditingColumn else { return }
+        headerEditor = nil
+        headerEditingColumn = nil
+        let newValue = editor.string
+        editor.removeFromSuperview()
+        view.window?.makeFirstResponder(tableView)
+        if commit {
+            document?.performTableOperation("Rename Column") {
+                $0.renameColumn(at: column, to: newValue)
+            }
+        }
+    }
+
+    // MARK: Column auto-fit
+
+    /// Widest content width for the column (sampled above 20k rows, like
+    /// csv-editor's type inference) plus padding, clamped to sane bounds.
+    func idealWidth(forColumn column: Int) -> CGFloat {
+        let font = NSFont.monospacedDigitSystemFont(
+            ofSize: NSFont.systemFontSize(for: .small), weight: .regular)
+        let attributes: [NSAttributedString.Key: Any] = [.font: font]
+        var widest = (columnTitleForMeasurement(column) as NSString)
+            .size(withAttributes: attributes).width
+        let rows = content.table.rows
+        let stride = rows.count > 20000 ? (rows.count + 19999) / 20000 : 1
+        var r = 0
+        while r < rows.count {
+            let row = rows[r]
+            if column < row.count && !row[column].isEmpty {
+                // Only the longest line of a multiline cell matters.
+                let cell = row[column]
+                var line = cell
+                if cell.contains("\n") {
+                    let parts: [Substring] = cell.split(
+                        separator: "\n" as Character, omittingEmptySubsequences: false)
+                    if let longest = parts.max(by: { $0.count < $1.count }) {
+                        line = String(longest)
+                    }
+                }
+                let width = (line as NSString).size(withAttributes: attributes).width
+                if width > widest { widest = width }
+            }
+            r += stride
+        }
+        return min(600, max(24, widest + 12))
+    }
+
+    private func columnTitleForMeasurement(_ column: Int) -> String {
+        if content.hasHeader, let header = content.table.header, column < header.count {
+            return header[column]
+        }
+        return ""
+    }
+
+    func autoFitColumn(_ column: Int) {
+        let tableColumnIndex = column + 1
+        guard tableColumnIndex < tableView.tableColumns.count else { return }
+        tableView.tableColumns[tableColumnIndex].width = idealWidth(forColumn: column)
+    }
+
+    /// Double-click on a column divider (NSTableView calls this delegate).
+    func tableView(_ tableView: NSTableView, sizeToFitWidthOfColumn columnIndex: Int) -> CGFloat {
+        guard let column = Self.dataColumnIndex(of: tableView.tableColumns[columnIndex]) else {
+            return tableView.tableColumns[columnIndex].width
+        }
+        return idealWidth(forColumn: column)
     }
 }

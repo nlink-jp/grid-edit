@@ -40,13 +40,17 @@ input, focus, and menus behave like macOS, not like a web page.
   csv-editor's Ctrl+H means Hide here): incremental search with match
   count, ⌘G / ⇧⌘G next/previous with wrap-around, case-sensitive /
   regex / whole-cell options, Replace one or All (one undo step)
+- **Header renaming** (double-click a column header, or right-click →
+  Rename Column) and **column auto-fit** (double-click the divider, or
+  right-click → Auto-fit Width; content sampled above 20k rows)
+- **Numeric columns right-aligned** automatically (display only — values
+  stay strings)
 - Maximum file size: 500 MB (larger files are refused with a clear error)
 
 ## Planned (Phase 2 — csv-editor parity)
 
-Find & Replace, header renaming, column auto-fit, numeric right-align,
-status bar with save-time format selection (encoding / delimiter / line
-ending), Open Recent, and window-frame persistence.
+Status bar with save-time format selection (encoding / delimiter / line
+ending / header toggle), Open Recent, and window-frame persistence.
 
 By design, grid-edit is **not** a spreadsheet — no formulas, sheets, charts,
 xlsx/ods, or macros. Windows and Linux are not supported.

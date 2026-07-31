@@ -32,6 +32,9 @@ All notable changes to this project will be documented in this file.
   ⌘G/⇧⌘G navigation with wrap-around, case/regex/whole-cell options,
   replace one / replace all (single undo step). macOS-native bindings
   (⌥⌘F instead of csv-editor's Ctrl+H, which is Hide on macOS)
+- Header renaming (double-click the header or context menu), column
+  auto-fit width (divider double-click or context menu, sampled above
+  20k rows), automatic right-alignment for numeric columns
 - Main menu with standard File/Edit shortcuts
 - Project scaffold: SPM package (GridEditCore engine module + GridEdit app),
   Makefile build/sign/notarize pipeline, document-typed Info.plist,

@@ -39,17 +39,30 @@ final class GridTableView: NSTableView {
 
     override var acceptsFirstResponder: Bool { true }
 
-    /// Header view that forwards right-clicks per data column.
+    /// Header view that forwards right-clicks and double-clicks per data
+    /// column.
     final class HeaderView: NSTableHeaderView {
         var onMenu: ((Int) -> NSMenu?)?
+        var onDoubleClick: ((Int) -> Void)?
 
-        override func menu(for event: NSEvent) -> NSMenu? {
+        private func dataColumn(for event: NSEvent) -> Int? {
             let point = convert(event.locationInWindow, from: nil)
             let columnIndex = column(at: point)
-            guard columnIndex >= 0, let tableView,
-                  let dataColumn = GridViewController.dataColumnIndex(
-                    of: tableView.tableColumns[columnIndex]) else { return nil }
-            return onMenu?(dataColumn)
+            guard columnIndex >= 0, let tableView else { return nil }
+            return GridViewController.dataColumnIndex(of: tableView.tableColumns[columnIndex])
+        }
+
+        override func menu(for event: NSEvent) -> NSMenu? {
+            guard let column = dataColumn(for: event) else { return nil }
+            return onMenu?(column)
+        }
+
+        override func mouseDown(with event: NSEvent) {
+            if event.clickCount == 2, let column = dataColumn(for: event) {
+                onDoubleClick?(column)
+                return
+            }
+            super.mouseDown(with: event) // keeps divider drag-resizing working
         }
     }
 
