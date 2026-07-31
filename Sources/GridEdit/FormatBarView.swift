@@ -57,8 +57,10 @@ final class FormatBarView: NSView {
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
+            stack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            // Fixed bar height — as a compressible stack member the bar
+            // would otherwise shrink below its content and clip controls.
+            heightAnchor.constraint(equalToConstant: 30),
         ])
     }
 
