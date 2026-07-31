@@ -242,8 +242,15 @@ extension GridViewController {
 
     func sortByColumns(_ columns: ClosedRange<Int>, ascending: Bool) {
         let keys = columns.map { SortKey(columnIndex: $0, ascending: ascending) }
+        pendingSortIndicator = (columns, ascending)
         document?.performTableOperation(ascending ? L("Sort Ascending") : L("Sort Descending")) {
             $0.sortRows(by: keys)
+        }
+        // A no-op sort (already in order) skips contentDidChange — the data
+        // IS in the requested order, so show the indicator directly.
+        if pendingSortIndicator != nil {
+            applySortIndicator(columns, ascending: ascending)
+            pendingSortIndicator = nil
         }
     }
 

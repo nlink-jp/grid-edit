@@ -34,6 +34,11 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     var headerEditor: NSTextView?
     var headerEditingColumn: Int?
 
+    /// Set by sortByColumns just before the operation so contentDidChange
+    /// can tell "this reload IS the sort" (keep/show the indicator) from
+    /// any other mutation (clear it — the order may no longer hold).
+    var pendingSortIndicator: (columns: ClosedRange<Int>, ascending: Bool)?
+
     let formatBar = FormatBarView()
 
     /// Display line count per row (1 for single-line rows). Rows containing
@@ -274,6 +279,25 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         tableView.reloadData()
         formatBar.update(content: content)
         refreshFind(jumpToFirst: false)
+
+        if let pending = pendingSortIndicator {
+            applySortIndicator(pending.columns, ascending: pending.ascending)
+            pendingSortIndicator = nil
+        } else {
+            applySortIndicator(nil, ascending: true)
+        }
+    }
+
+    /// Shows the Finder-style ▲/▼ header indicator on the sorted columns
+    /// (nil clears all indicators).
+    func applySortIndicator(_ columns: ClosedRange<Int>?, ascending: Bool) {
+        let image = columns == nil ? nil : NSImage(
+            named: ascending ? "NSAscendingSortIndicator" : "NSDescendingSortIndicator")
+        for column in tableView.tableColumns {
+            guard let index = Self.dataColumnIndex(of: column) else { continue }
+            tableView.setIndicatorImage(
+                columns?.contains(index) == true ? image : nil, in: column)
+        }
     }
 
     private func rebuildRowLineCounts(changedRows: Set<Int>? = nil) {
