@@ -35,7 +35,11 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     private static let cellFont = NSFont.monospacedDigitSystemFont(
         ofSize: NSFont.systemFontSize(for: .small), weight: .regular)
     static let baseRowHeight: CGFloat = 20
-    private static let lineHeight: CGFloat = 16
+    /// Measured, not hardcoded: the label lays out both ASCII and Japanese
+    /// lines at exactly this height, so extra lines add exactly this much.
+    /// Anything larger leaves a growing blank band under the last line.
+    private static let lineHeight: CGFloat =
+        ceil(NSLayoutManager().defaultLineHeight(for: cellFont))
 
     /// Longest explicit-newline line count among the row's cells.
     /// Width-based wrapping deliberately doesn't count (display uses
