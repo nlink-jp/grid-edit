@@ -120,6 +120,13 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
         wireFindBar()
         wireFormatBar()
+        NotificationCenter.default.addObserver(
+            forName: NSTableView.columnDidResizeNotification,
+            object: tableView, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.refreshSelectionSpans()
+            }
+        }
         let stack = NSStackView(views: [findBar, scroll, formatBar])
         stack.orientation = .vertical
         stack.spacing = 0
@@ -556,6 +563,41 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
 
     // MARK: NSTableViewDelegate
 
+    private static let rowViewID = NSUserInterfaceItemIdentifier("gridedit.rowview")
+
+    func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
+        let rowView = tableView.makeView(
+            withIdentifier: Self.rowViewID, owner: self) as? GridRowView ?? {
+                let view = GridRowView()
+                view.identifier = Self.rowViewID
+                return view
+            }()
+        rowView.selectionSpan = selectionSpan(forRow: row)
+        return rowView
+    }
+
+    /// Table-coordinate x-span the selection covers in `row` — the full
+    /// column rects including intercell spacing, so the highlight touches
+    /// the vertical grid lines.
+    func selectionSpan(forRow row: Int) -> NSRect? {
+        guard let selection, selection.rowRange.contains(row) else { return nil }
+        let first = selection.columnRange.lowerBound + 1 // + row-number column
+        let last = min(selection.columnRange.upperBound + 1, tableView.tableColumns.count - 1)
+        guard first < tableView.tableColumns.count, first <= last else { return nil }
+        let firstRect = tableView.rect(ofColumn: first)
+        let lastRect = tableView.rect(ofColumn: last)
+        return NSRect(
+            x: firstRect.minX, y: 0,
+            width: lastRect.maxX - firstRect.minX, height: 0)
+    }
+
+    /// Column widths changed: recompute the spans of the visible row views.
+    func refreshSelectionSpans() {
+        tableView.enumerateAvailableRowViews { rowView, row in
+            (rowView as? GridRowView)?.selectionSpan = selectionSpan(forRow: row)
+        }
+    }
+
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard let tableColumn else { return nil }
 
@@ -571,17 +613,15 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         let label = reusableLabel(Self.cellID)
         let cells = content.table.rows[row]
         // Blank the cell being edited so the editor overlay isn't
-        // double-drawn on top of the label.
+        // double-drawn on top of the label. Selection highlighting is
+        // painted by GridRowView (full cell area, no side gaps) — the
+        // label itself never draws a background.
         let isEditing = editingPosition == GridPosition(row: row, column: index)
         label.stringValue = isEditing ? "" : (index < cells.count ? cells[index] : "")
         label.alignment = index < numericColumns.count && numericColumns[index]
             ? .right : .natural
         label.textColor = .labelColor
-        let selected = selection?.contains(row: row, column: index) ?? false
-        label.drawsBackground = selected
-        label.backgroundColor = selected
-            ? NSColor.controlAccentColor.withAlphaComponent(0.22)
-            : .clear
+        label.drawsBackground = false
         return label
     }
 
