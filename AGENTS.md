@@ -7,9 +7,11 @@ SwiftUI only for auxiliary UI). Successor to csv-editor (Wails) — once
 grid-edit reaches full parity with csv-editor v0.2.1 and ships, csv-editor is
 archived and its Windows support ends. **Apple Silicon, macOS 14+.**
 
-**Status:** scaffold. Build pipeline, document plumbing, and the
-delimiter-detection heuristic exist; the grid UI and CSV engine proper are
-Phase 1 work. Design of record:
+**Status:** Phase 1 (Core) functional — engine (parse/serialize/detect,
+csv-editor testdata regression), grid display, rectangular selection,
+IME-safe cell editing, TSV clipboard with paste confirmation, undo/redo,
+main menu. Phase 2 (csv-editor parity: find/replace, sort, row/column ops,
+Open Recent, frame persistence) not started. Design of record:
 `docs/en/grid-edit-rfp.md` / `docs/ja/grid-edit-rfp.ja.md`.
 
 ## Build / test / run
@@ -61,6 +63,17 @@ assets/                     AppIcon-1024.png source (not yet added)
   detection). Keep the inspired-by attribution in README and LICENSE.
 
 ## Gotchas
+
+- **The cell editor is an NSTextView overlay, not an NSTextField.** Inside
+  an NSTableView the field-editor delegate forwarding
+  (`control:textView:doCommandBySelector:`) does not fire, so an
+  NSTextField editor silently swallows Return/Tab/Esc. NSTextView's own
+  delegate path (`textView(_:doCommandBy:)`) is reliable. Do not "simplify"
+  back to NSTextField.
+- **Scripted E2E typing must leave Japanese IME first** (System Events
+  `key code 102` = Eisū). With the IME composing, Return commits the
+  composition — which is the *correct* user-facing behavior, but makes an
+  automation script think the commit failed.
 
 - `Info.plist` `NSDocumentClass` must be the **runtime** class name
   `GridDocument` (set by `@objc(GridDocument)`), not the Swift-qualified

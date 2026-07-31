@@ -1,11 +1,29 @@
 import AppKit
 import GridEditCore
 
-/// Read-only grid over a document's table. View-based NSTableView gives
-/// row virtualization for free; cells are reused NSTextFields.
-final class GridViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
+/// The editable grid over a document's table: rectangular selection,
+/// field-editor cell editing, TSV clipboard, and document-routed undo.
+final class GridViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSTextViewDelegate {
     private(set) var content: DocumentContent
-    let tableView = NSTableView()
+    weak var document: GridDocument?
+    let tableView = GridTableView()
+
+    var selection: GridSelection? {
+        didSet { tableView.reloadData() }
+    }
+
+    /// Paste-confirmation hook; tests replace it. Returns true to proceed.
+    var confirmPaste: ([PastePlanner.Concern]) -> Bool = { concerns in
+        let alert = NSAlert()
+        alert.messageText = "Confirm paste"
+        alert.informativeText = concerns.map(\.message).joined(separator: "\n")
+        alert.addButton(withTitle: "Paste")
+        alert.addButton(withTitle: "Cancel")
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    private var cellEditor: NSTextView?
+    private var editingPosition: GridPosition?
 
     private static let rowNumberColumnID = NSUserInterfaceItemIdentifier("gridedit.rownumber")
     private static let cellID = NSUserInterfaceItemIdentifier("gridedit.cell")
@@ -13,19 +31,25 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     private static let cellFont = NSFont.monospacedDigitSystemFont(
         ofSize: NSFont.systemFontSize(for: .small), weight: .regular)
 
-    init(content: DocumentContent) {
+    init(content: DocumentContent, document: GridDocument? = nil) {
         self.content = content
+        self.document = document
         super.init(nibName: nil, bundle: nil)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("not used") }
 
+    private var rowCount: Int { content.table.rows.count }
+    private var columnCount: Int { content.table.maxColumns }
+
+    // MARK: View construction
+
     override func loadView() {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.allowsColumnReordering = false
-        tableView.allowsMultipleSelection = true
+        tableView.selectionHighlightStyle = .none
         tableView.usesAlternatingRowBackgroundColors = true
         tableView.gridStyleMask = [.solidVerticalGridLineMask, .solidHorizontalGridLineMask]
         tableView.style = .plain
@@ -37,14 +61,9 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         rowNumber.width = rowNumberColumnWidth()
         rowNumber.resizingMask = []
         tableView.addTableColumn(rowNumber)
+        syncDataColumns()
 
-        for index in 0..<content.table.maxColumns {
-            let column = NSTableColumn(identifier: Self.dataColumnID(index))
-            column.title = columnTitle(index)
-            column.width = 120
-            column.minWidth = 24
-            tableView.addTableColumn(column)
-        }
+        wireGridCallbacks()
 
         let scroll = NSScrollView()
         scroll.hasVerticalScroller = true
@@ -56,6 +75,259 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         scroll.frame = NSRect(x: 0, y: 0, width: 800, height: 600)
         view = scroll
     }
+
+    private func wireGridCallbacks() {
+        tableView.onSelect = { [weak self] hit, extending in
+            self?.commitEditIfNeeded()
+            self?.select(hit, extending: extending)
+        }
+        tableView.onDragExtend = { [weak self] hit in
+            guard let self, let current = self.selection else { return }
+            let column = hit.dataColumn ?? (self.columnCount - 1)
+            self.selection = GridSelection(
+                anchor: current.anchor,
+                focus: GridPosition(row: hit.row, column: column))
+        }
+        tableView.onBeginEdit = { [weak self] in self?.beginEdit() }
+        tableView.onMove = { [weak self] direction, toEdge, extending in
+            self?.moveSelection(direction, toEdge: toEdge, extending: extending)
+        }
+        tableView.onClearCells = { [weak self] in self?.clearSelectedCells() }
+        tableView.onPage = { [weak self] down in self?.pageSelection(down: down) }
+    }
+
+    private func select(_ hit: GridTableView.GridHit, extending: Bool) {
+        let focus: GridPosition
+        let anchor: GridPosition
+        if let column = hit.dataColumn {
+            focus = GridPosition(row: hit.row, column: column)
+            anchor = extending ? (selection?.anchor ?? focus) : focus
+        } else {
+            // Row-number column: select the whole row.
+            focus = GridPosition(row: hit.row, column: max(0, columnCount - 1))
+            anchor = extending
+                ? (selection?.anchor ?? GridPosition(row: hit.row, column: 0))
+                : GridPosition(row: hit.row, column: 0)
+        }
+        selection = GridSelection(anchor: anchor, focus: focus)
+        scrollToFocus()
+    }
+
+    private func moveSelection(_ direction: GridSelection.Direction, toEdge: Bool, extending: Bool) {
+        guard rowCount > 0, columnCount > 0 else { return }
+        commitEditIfNeeded()
+        let current = selection ?? GridSelection(anchor: GridPosition(row: 0, column: 0))
+        selection = current.moving(
+            direction, toEdge: toEdge, extending: extending,
+            rowCount: rowCount, columnCount: columnCount)
+        scrollToFocus()
+    }
+
+    private func pageSelection(down: Bool) {
+        guard rowCount > 0, columnCount > 0 else { return }
+        let visibleRows = max(1, tableView.rows(in: tableView.visibleRect).length - 1)
+        let current = selection ?? GridSelection(anchor: GridPosition(row: 0, column: 0))
+        var focus = current.focus
+        focus.row = max(0, min(rowCount - 1, focus.row + (down ? visibleRows : -visibleRows)))
+        selection = GridSelection(anchor: focus)
+        scrollToFocus()
+    }
+
+    private func scrollToFocus() {
+        guard let focus = selection?.focus else { return }
+        tableView.scrollRowToVisible(focus.row)
+        let columnIndex = focus.column + 1 // + row-number column
+        if columnIndex < tableView.tableColumns.count {
+            tableView.scrollColumnToVisible(columnIndex)
+        }
+    }
+
+    // MARK: Content updates
+
+    /// Called by the document after every model mutation.
+    func contentDidChange(_ newContent: DocumentContent) {
+        content = newContent
+        syncDataColumns()
+        tableView.reloadData()
+    }
+
+    private func syncDataColumns() {
+        let existing = tableView.tableColumns.count - 1 // minus row-number column
+        for index in existing..<columnCount {
+            let column = NSTableColumn(identifier: Self.dataColumnID(index))
+            column.title = columnTitle(index)
+            column.width = 120
+            column.minWidth = 24
+            tableView.addTableColumn(column)
+        }
+    }
+
+    // MARK: Editing
+
+    func beginEdit() {
+        guard let focus = selection?.focus, cellEditor == nil,
+              focus.row < rowCount else { return }
+        let columnIndex = focus.column + 1
+        guard columnIndex < tableView.tableColumns.count else { return }
+
+        tableView.scrollRowToVisible(focus.row)
+        tableView.scrollColumnToVisible(columnIndex)
+
+        // The editor is an NSTextView overlay, not an NSTextField: inside an
+        // NSTableView the field-editor forwarding (control:textView:
+        // doCommandBySelector:) never fires, so Return/Tab/Esc would be
+        // swallowed. NSTextView's own delegate path is direct and reliable,
+        // and IME composition is native to NSTextView anyway.
+        let frame = tableView.frameOfCell(atColumn: columnIndex, row: focus.row)
+        let editor = NSTextView(frame: frame.insetBy(dx: -1, dy: -1))
+        editor.font = Self.cellFont
+        editor.string = cellValue(at: focus)
+        editor.delegate = self
+        editor.isRichText = false
+        editor.isFieldEditor = false // we route Return/Tab ourselves
+        editor.allowsUndo = true
+        editor.drawsBackground = true
+        editor.backgroundColor = .textBackgroundColor
+        editor.textContainerInset = NSSize(width: 0, height: 1)
+        editor.wantsLayer = true
+        editor.layer?.borderColor = NSColor.controlAccentColor.cgColor
+        editor.layer?.borderWidth = 2
+        tableView.addSubview(editor)
+        cellEditor = editor
+        editingPosition = focus
+        view.window?.makeFirstResponder(editor)
+        editor.selectAll(nil)
+    }
+
+    private func cellValue(at position: GridPosition) -> String {
+        guard position.row < rowCount else { return "" }
+        let cells = content.table.rows[position.row]
+        return position.column < cells.count ? cells[position.column] : ""
+    }
+
+    /// Ends the current edit session. `commit: false` discards the value.
+    private func endEdit(commit: Bool) {
+        guard let editor = cellEditor, let position = editingPosition else { return }
+        cellEditor = nil
+        editingPosition = nil
+        let newValue = editor.string
+        editor.removeFromSuperview()
+        view.window?.makeFirstResponder(tableView)
+        if commit && newValue != cellValue(at: position) {
+            document?.applyEdits(
+                [CellEdit(row: position.row, column: position.column, value: newValue)],
+                actionName: "Edit Cell")
+        }
+    }
+
+    func commitEditIfNeeded() {
+        endEdit(commit: true)
+    }
+
+    // MARK: NSTextViewDelegate (cell editor)
+
+    func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+        guard textView === cellEditor else { return false }
+        switch selector {
+        case #selector(NSResponder.insertNewline(_:)):
+            let event = NSApp.currentEvent
+            if event?.type == .keyDown && event?.modifierFlags.contains(.option) == true {
+                // Alt+Enter: literal newline inside the cell (RFC 4180
+                // quoted multi-line field). Let the text view insert it.
+                return false
+            }
+            endEdit(commit: true)
+            moveSelection(.down, toEdge: false, extending: false)
+            return true
+        case #selector(NSResponder.insertTab(_:)):
+            endEdit(commit: true)
+            moveSelection(.right, toEdge: false, extending: false)
+            return true
+        case #selector(NSResponder.insertBacktab(_:)):
+            endEdit(commit: true)
+            moveSelection(.left, toEdge: false, extending: false)
+            return true
+        case #selector(NSResponder.cancelOperation(_:)):
+            endEdit(commit: false)
+            return true
+        default:
+            return false
+        }
+    }
+
+    func textDidEndEditing(_ notification: Notification) {
+        // Focus moved elsewhere (click outside, window switch): commit.
+        endEdit(commit: true)
+    }
+
+    // MARK: Clipboard / editing actions (responder chain)
+
+    @objc func copy(_ sender: Any?) {
+        guard let selection else { return }
+        let tsv = TSV.encode(selection.block(in: content.table))
+        guard !tsv.isEmpty else { return }
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(tsv, forType: .string)
+    }
+
+    @objc func cut(_ sender: Any?) {
+        copy(sender)
+        clearSelectedCells(actionName: "Cut")
+    }
+
+    @objc func paste(_ sender: Any?) {
+        guard let selection,
+              let text = NSPasteboard.general.string(forType: .string),
+              let plan = PastePlanner.plan(
+                block: TSV.decode(text), selection: selection, table: content.table)
+        else { return }
+        if !plan.concerns.isEmpty && !confirmPaste(plan.concerns) {
+            return
+        }
+        document?.applyEdits(plan.edits, actionName: "Paste")
+        self.selection = plan.pastedSelection
+    }
+
+    @objc func delete(_ sender: Any?) {
+        clearSelectedCells()
+    }
+
+    @objc override func selectAll(_ sender: Any?) {
+        guard rowCount > 0, columnCount > 0 else { return }
+        selection = GridSelection(
+            anchor: GridPosition(row: 0, column: 0),
+            focus: GridPosition(row: rowCount - 1, column: columnCount - 1))
+    }
+
+    func clearSelectedCells(actionName: String = "Clear") {
+        guard let selection else { return }
+        var edits: [CellEdit] = []
+        for row in selection.rowRange where row < rowCount {
+            let width = content.table.rows[row].count
+            for column in selection.columnRange where column < width {
+                if !content.table.rows[row][column].isEmpty {
+                    edits.append(CellEdit(row: row, column: column, value: ""))
+                }
+            }
+        }
+        guard !edits.isEmpty else { return }
+        document?.applyEdits(edits, actionName: actionName)
+    }
+
+    @objc func validateMenuItem(_ item: NSMenuItem) -> Bool {
+        switch item.action {
+        case #selector(copy(_:)), #selector(cut(_:)), #selector(delete(_:)):
+            return selection != nil
+        case #selector(paste(_:)):
+            return selection != nil
+                && NSPasteboard.general.string(forType: .string) != nil
+        default:
+            return true
+        }
+    }
+
+    // MARK: Column helpers
 
     static func dataColumnID(_ index: Int) -> NSUserInterfaceItemIdentifier {
         NSUserInterfaceItemIdentifier("gridedit.col.\(index)")
@@ -76,14 +348,14 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     }
 
     private func rowNumberColumnWidth() -> CGFloat {
-        let digits = max(2, String(content.table.rows.count).count)
+        let digits = max(2, String(rowCount).count)
         return CGFloat(digits) * 9 + 16
     }
 
     // MARK: NSTableViewDataSource
 
     func numberOfRows(in tableView: NSTableView) -> Int {
-        content.table.rows.count
+        rowCount
     }
 
     // MARK: NSTableViewDelegate
@@ -91,20 +363,25 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard let tableColumn else { return nil }
 
-        if Self.dataColumnIndex(of: tableColumn) == nil {
+        guard let index = Self.dataColumnIndex(of: tableColumn) else {
             let label = reusableLabel(Self.rowNumberCellID)
             label.stringValue = String(row + 1)
             label.alignment = .right
             label.textColor = .secondaryLabelColor
+            label.drawsBackground = false
             return label
         }
 
-        guard let index = Self.dataColumnIndex(of: tableColumn) else { return nil }
         let label = reusableLabel(Self.cellID)
         let cells = content.table.rows[row]
         label.stringValue = index < cells.count ? cells[index] : ""
         label.alignment = .natural
         label.textColor = .labelColor
+        let selected = selection?.contains(row: row, column: index) ?? false
+        label.drawsBackground = selected
+        label.backgroundColor = selected
+            ? NSColor.controlAccentColor.withAlphaComponent(0.22)
+            : .clear
         return label
     }
 
@@ -119,5 +396,16 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         label.usesSingleLineMode = true
         label.cell?.truncatesLastVisibleLine = true
         return label
+    }
+}
+
+extension PastePlanner.Concern {
+    var message: String {
+        switch self {
+        case .shapeMismatch(let clipRows, let clipColumns, let selectionRows, let selectionColumns):
+            return "The clipboard (\(clipRows)×\(clipColumns)) doesn't match the selected \(selectionRows)×\(selectionColumns) range."
+        case .extendsTable(let newRowCount, let newColumnCount):
+            return "The paste will extend the table to \(newRowCount) rows × \(newColumnCount) columns."
+        }
     }
 }

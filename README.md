@@ -8,19 +8,33 @@ spiritual successor to [TableTool](https://github.com/jakob/TableTool). The
 grid is a real AppKit view — NSDocument + NSTableView — so scrolling, IME
 input, focus, and menus behave like macOS, not like a web page.
 
-> **Status: scaffold.** The project structure, build pipeline, and CSV-engine
-> module exist; the grid UI does not yet. See the
+> **Status: Phase 1 (Core) in development.** See the
 > [RFP](docs/en/grid-edit-rfp.md) for the full specification and plan.
 
-## Planned features (from the RFP)
+## Features (Phase 1, working today)
 
-- Full feature parity with csv-editor v0.2.1: encoding auto-detection
-  (UTF-8 / Shift_JIS / CP932), RFC 4180 parsing, rectangular range selection,
-  IME-safe cell editing, TSV clipboard with paste expansion, Undo/Redo,
-  Find & Replace, sort, row/column operations, virtual scrolling
-- Delimiter auto-detection: comma / tab / **semicolon** (European CSV),
-  with delimiter conversion on save
-- Maximum file size: 500 MB
+- Open / Save with **encoding auto-detection** (UTF-8 with or without BOM,
+  Shift_JIS, CP932), RFC 4180 parsing, and **delimiter auto-detection**:
+  comma / tab / **semicolon** (European CSV). Line endings (LF / CRLF)
+  are detected and preserved
+- Virtualized native grid (hundreds of thousands of rows) with row numbers
+  and header-row column titles
+- **Rectangular range selection**: mouse drag, Shift+click, Shift+arrows,
+  Cmd+arrow to the edge, Cmd+A
+- **Cell editing on the native text system** — Enter during Japanese IME
+  composition commits the composition, never the cell; Alt+Enter inserts
+  an in-cell newline; Esc cancels; Tab / Enter commit and move
+- **TSV clipboard** (Excel-compatible): copy writes quoted TSV; pasting
+  into a single cell expands across cells; shape mismatches and pastes
+  that would grow the table ask for confirmation first
+- **Undo / Redo** for every edit, batch edits collapse to one step
+- Maximum file size: 500 MB (larger files are refused with a clear error)
+
+## Planned (Phase 2 — csv-editor parity)
+
+Find & Replace, sort, row/column insert/duplicate/move/delete, header
+renaming, column auto-fit, Open Recent, window-frame persistence, and
+delimiter conversion UI on save.
 
 By design, grid-edit is **not** a spreadsheet — no formulas, sheets, charts,
 xlsx/ods, or macros. Windows and Linux are not supported.

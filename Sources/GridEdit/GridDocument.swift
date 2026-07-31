@@ -2,16 +2,53 @@ import AppKit
 import GridEditCore
 
 /// The CSV/TSV document. All byte-level work (detection, parse, serialize,
-/// size cap) lives in GridEditCore.DocumentIO; this class is AppKit glue.
+/// size cap) lives in GridEditCore.DocumentIO; this class is AppKit glue
+/// plus the undo-managed mutation funnel.
 @objc(GridDocument)
 final class GridDocument: NSDocument {
-    var content = DocumentContent()
+    var content: DocumentContent
+
+    override init() {
+        // Untitled documents start with a modest empty grid to type into;
+        // pasting grows it as needed.
+        content = DocumentContent(
+            table: CSVTable(rows: Array(repeating: Array(repeating: "", count: 5), count: 10)))
+        super.init()
+    }
 
     override class var autosavesInPlace: Bool { false }
 
     override class func canConcurrentlyReadDocuments(ofType typeName: String) -> Bool {
         true
     }
+
+    private var gridViewController: GridViewController? {
+        windowControllers.first?.contentViewController as? GridViewController
+    }
+
+    // MARK: Mutations (single funnel, undo-managed)
+
+    /// Applies a batch of cell edits as one undoable action.
+    func applyEdits(_ edits: [CellEdit], actionName: String) {
+        guard !edits.isEmpty else { return }
+        let undo = content.table.apply(edits)
+        undoManager?.registerUndo(withTarget: self) { document in
+            document.revertEdits(undo, redo: edits, actionName: actionName)
+        }
+        undoManager?.setActionName(actionName)
+        gridViewController?.contentDidChange(content)
+    }
+
+    private func revertEdits(_ undo: CSVTable.EditUndo, redo: [CellEdit], actionName: String) {
+        content.table.restore(undo)
+        undoManager?.registerUndo(withTarget: self) { document in
+            document.applyEdits(redo, actionName: actionName)
+        }
+        undoManager?.setActionName(actionName)
+        gridViewController?.contentDidChange(content)
+    }
+
+    // MARK: Reading / writing
 
     override func read(from url: URL, ofType typeName: String) throws {
         // Refuse oversized files before their bytes are loaded into memory.
@@ -27,8 +64,11 @@ final class GridDocument: NSDocument {
     }
 
     override func data(ofType typeName: String) throws -> Data {
-        try DocumentIO.write(content)
+        gridViewController?.commitEditIfNeeded()
+        return try DocumentIO.write(content)
     }
+
+    // MARK: Window
 
     override func makeWindowControllers() {
         let window = NSWindow(
@@ -37,7 +77,7 @@ final class GridDocument: NSDocument {
             backing: .buffered,
             defer: false
         )
-        window.contentViewController = GridViewController(content: content)
+        window.contentViewController = GridViewController(content: content, document: self)
         // contentViewController sizing follows the view's (empty) fitting
         // size, collapsing the window to its title bar — force the geometry.
         window.setContentSize(NSSize(width: 800, height: 600))
@@ -45,6 +85,10 @@ final class GridDocument: NSDocument {
         // State restoration (with proper frame persistence) is Phase 2 work;
         // until then don't let macOS resurrect stale frames after a crash.
         window.isRestorable = false
+        if let vc = window.contentViewController as? GridViewController {
+            window.initialFirstResponder = vc.tableView
+            window.makeFirstResponder(vc.tableView)
+        }
         addWindowController(NSWindowController(window: window))
     }
 }

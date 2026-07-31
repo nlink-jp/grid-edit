@@ -32,6 +32,7 @@ enum GridEditMain {
         Self.delegate = delegate
         app.delegate = delegate
         app.setActivationPolicy(.regular)
+        app.mainMenu = MainMenu.build()
         app.run()
     }
 }
