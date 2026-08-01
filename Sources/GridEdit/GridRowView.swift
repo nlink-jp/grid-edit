@@ -25,6 +25,19 @@ final class GridRowView: NSTableRowView {
     override func drawBackground(in dirtyRect: NSRect) {
         super.drawBackground(in: dirtyRect) // alternating row background
 
+        // The row view spans the whole table width; erase the stripe right
+        // of the last column so the table visibly ends at its data.
+        if let table = superview as? GridTableView {
+            let dataMaxX = table.dataExtent.maxX
+            if bounds.maxX > dataMaxX {
+                let overflow = NSRect(
+                    x: dataMaxX, y: bounds.minY,
+                    width: bounds.maxX - dataMaxX, height: bounds.height)
+                table.backgroundColor.setFill()
+                overflow.intersection(dirtyRect).fill()
+            }
+        }
+
         let span = spanProvider?()
 
         // Row-number gutter: header-like background so it reads as chrome,
@@ -50,6 +63,25 @@ final class GridRowView: NSTableRowView {
             span.size.height = bounds.height
             NSColor.controlAccentColor.withAlphaComponent(0.22).setFill()
             span.intersection(dirtyRect).fill()
+        }
+
+        drawGridLines(in: dirtyRect)
+    }
+
+    /// The grid, self-drawn per row (native gridStyleMask is disabled so
+    /// no grid appears outside the data area): a bottom separator plus a
+    /// vertical separator at every column boundary, within the data width.
+    private func drawGridLines(in dirtyRect: NSRect) {
+        guard let table = superview as? GridTableView else { return }
+        let dataMaxX = table.dataExtent.maxX
+        NSColor.gridColor.setFill()
+        NSRect(x: 0, y: bounds.maxY - 1, width: min(bounds.maxX, dataMaxX), height: 1)
+            .intersection(dirtyRect).fill()
+        for column in 0..<table.numberOfColumns {
+            let x = table.rect(ofColumn: column).maxX
+            guard x <= dataMaxX else { break }
+            NSRect(x: x - 1, y: bounds.minY, width: 1, height: bounds.height)
+                .intersection(dirtyRect).fill()
         }
     }
 }

@@ -41,6 +41,24 @@ final class GridTableView: NSTableView {
 
     override var acceptsFirstResponder: Bool { true }
 
+    /// The rectangle actually occupied by data (rows × columns). Everything
+    /// beyond it is canvas, not table.
+    var dataExtent: NSRect {
+        let maxY = numberOfRows > 0 ? rect(ofRow: numberOfRows - 1).maxY : 0
+        let maxX = numberOfColumns > 0 ? rect(ofColumn: numberOfColumns - 1).maxX : 0
+        return NSRect(x: 0, y: 0, width: maxX, height: maxY)
+    }
+
+    /// Confine phantom row stripes to the data area — NSTableView would
+    /// otherwise continue them below the last row, making the table look
+    /// endless. Grid lines are drawn by GridRowView per real row (native
+    /// gridStyleMask is off), so nothing else paints outside the data.
+    override func drawBackground(inClipRect clipRect: NSRect) {
+        backgroundColor.setFill()
+        clipRect.fill()
+        super.drawBackground(inClipRect: clipRect.intersection(dataExtent))
+    }
+
     /// Header view that forwards clicks (column selection), double-clicks
     /// (rename) and right-clicks (menu) per data column, while leaving the
     /// divider region to NSTableHeaderView so drag-resize and

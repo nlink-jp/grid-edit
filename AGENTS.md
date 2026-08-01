@@ -80,6 +80,12 @@ assets/                     AppIcon-1024.png source (not yet added)
   NSTextField editor silently swallows Return/Tab/Esc. NSTextView's own
   delegate path (`textView(_:doCommandBy:)`) is reliable. Do not "simplify"
   back to NSTextField.
+- **The grid is self-drawn by GridRowView; native gridStyleMask stays
+  off.** NSTableView paints its grid across the empty area below/beside
+  the data too, and not only via drawGrid(inClipRect:) — clipping that
+  override (or even draw(_:)) does NOT remove the phantom lines. Row-
+  local drawing is the reliable way to end the table at its data.
+  Phantom stripes are clipped in GridTableView.drawBackground.
 - **The editor overlay must be re-raised when row views rebuild.** A full
   reloadData rebuilds row views lazily on the *next* layout pass; when
   selection change and beginEdit happen in one event cycle (double-click),

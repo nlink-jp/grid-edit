@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 
 - Row-number gutter is visually distinct from data cells (theme-adaptive
   gray fill; rows with selected cells get a subtle accent tint)
+- The table visibly ends at its data: row stripes and grid lines no
+  longer continue below the last row or right of the last column (the
+  grid is now drawn per row; the area outside the data is plain canvas)
 
 ## [0.2.0] - 2026-08-01
 

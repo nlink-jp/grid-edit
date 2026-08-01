@@ -99,7 +99,10 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
         tableView.allowsColumnReordering = false
         tableView.selectionHighlightStyle = .none
         tableView.usesAlternatingRowBackgroundColors = true
-        tableView.gridStyleMask = [.solidVerticalGridLineMask, .solidHorizontalGridLineMask]
+        // No native grid: NSTableView paints it across the empty area below
+        // and beside the data too (and not only via drawGrid, so it can't
+        // be clipped away). GridRowView draws the grid per real row instead.
+        tableView.gridStyleMask = []
         tableView.style = .plain
         tableView.rowHeight = 20
         tableView.columnAutoresizingStyle = .noColumnAutoresizing
