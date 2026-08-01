@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Opening an empty (or header-only, or blank-line-only) CSV no longer
+  dead-ends the app: the grid always keeps at least one editable cell.
+  The same floor applies after deleting every row or every column
+
 ## [0.2.2] - 2026-08-01
 
 ### Changed

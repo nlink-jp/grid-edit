@@ -88,7 +88,8 @@ public enum DocumentIO {
             delimiter = .tab
         }
 
-        let table = CSV.parse(text, options: .init(delimiter: delimiter, hasHeader: hasHeader))
+        var table = CSV.parse(text, options: .init(delimiter: delimiter, hasHeader: hasHeader))
+        table.ensureMinimumGrid() // empty / header-only files must stay editable
         return DocumentContent(
             table: table,
             encoding: encoding,

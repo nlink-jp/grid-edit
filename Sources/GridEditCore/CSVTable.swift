@@ -18,4 +18,16 @@ public struct CSVTable: Equatable, Sendable {
         }
         return max
     }
+
+    /// Guarantees at least one row and one column. A 0×N or N×0 grid is a
+    /// dead end for the UI — no cell can be selected, so editing, pasting
+    /// and the context menus all become unreachable. Called after opening
+    /// a file and after every structural operation.
+    public mutating func ensureMinimumGrid() {
+        if rows.isEmpty {
+            rows = [[String](repeating: "", count: Swift.max(1, maxColumns))]
+        } else if maxColumns == 0 {
+            rows = rows.map { _ in [""] }
+        }
+    }
 }

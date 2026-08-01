@@ -56,6 +56,7 @@ final class GridDocument: NSDocument {
     func performTableOperation(_ actionName: String, _ op: (inout CSVTable) -> Bool) -> Bool {
         let before = content.table.snapshot()
         guard op(&content.table) else { return false }
+        content.table.ensureMinimumGrid() // deleting all rows/columns must not dead-end
         let after = content.table.snapshot()
         undoManager?.registerUndo(withTarget: self) { document in
             document.applySnapshot(before, opposite: after, actionName: actionName)
@@ -85,6 +86,7 @@ final class GridDocument: NSDocument {
     func performContentChange(_ actionName: String, _ op: (inout DocumentContent) -> Bool) -> Bool {
         let before = content
         guard op(&content) else { return false }
+        content.table.ensureMinimumGrid() // e.g. header toggle on a 1-row table
         let after = content
         undoManager?.registerUndo(withTarget: self) { document in
             document.applyContent(before, opposite: after, actionName: actionName)
