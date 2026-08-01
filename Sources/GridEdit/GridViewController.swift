@@ -599,6 +599,10 @@ final class GridViewController: NSViewController, NSTableViewDataSource, NSTable
                 return view
             }()
         rowView.spanProvider = { [weak self] in self?.selectionSpan(forRow: row) }
+        rowView.gutterProvider = { [weak self] in
+            guard let self, !self.tableView.tableColumns.isEmpty else { return nil }
+            return self.tableView.rect(ofColumn: 0)
+        }
         return rowView
     }
 

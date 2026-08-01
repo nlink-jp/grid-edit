@@ -12,6 +12,8 @@ final class GridRowView: NSTableRowView {
     /// Returns the current selection span for this row in table-view
     /// x coordinates, or nil when the row has no selected cells.
     var spanProvider: (() -> NSRect?)?
+    /// Returns the row-number gutter's x-range (table-view coordinates).
+    var gutterProvider: (() -> NSRect?)?
 
     override func layout() {
         super.layout()
@@ -22,10 +24,32 @@ final class GridRowView: NSTableRowView {
 
     override func drawBackground(in dirtyRect: NSRect) {
         super.drawBackground(in: dirtyRect) // alternating row background
-        guard var span = spanProvider?() else { return }
-        span.origin.y = bounds.minY
-        span.size.height = bounds.height
-        NSColor.controlAccentColor.withAlphaComponent(0.22).setFill()
-        span.intersection(dirtyRect).fill()
+
+        let span = spanProvider?()
+
+        // Row-number gutter: header-like background so it reads as chrome,
+        // not data; rows with selected cells get a subtle accent tint
+        // (spreadsheet convention).
+        if var gutter = gutterProvider?() {
+            gutter.origin.y = bounds.minY
+            gutter.size.height = bounds.height
+            let gutterRect = gutter.intersection(dirtyRect)
+            // labelColor overlay adapts to both themes and stays visibly
+            // darker than plain and striped rows alike (windowBackground-
+            // Color renders near-white in light mode — not enough).
+            NSColor.labelColor.withAlphaComponent(0.07).setFill()
+            gutterRect.fill()
+            if span != nil {
+                NSColor.controlAccentColor.withAlphaComponent(0.12).setFill()
+                gutterRect.fill()
+            }
+        }
+
+        if var span {
+            span.origin.y = bounds.minY
+            span.size.height = bounds.height
+            NSColor.controlAccentColor.withAlphaComponent(0.22).setFill()
+            span.intersection(dirtyRect).fill()
+        }
     }
 }

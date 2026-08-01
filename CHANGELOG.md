@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Row-number gutter is visually distinct from data cells (theme-adaptive
+  gray fill; rows with selected cells get a subtle accent tint)
+
 ## [0.2.0] - 2026-08-01
 
 ### Added
