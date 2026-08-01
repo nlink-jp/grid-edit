@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- CSV/TSV document types now claim LSHandlerRank Default (was Alternate):
+  on systems with no user preference, grid-edit becomes the double-click
+  handler. An existing user choice (e.g. Numbers via "Change All…") still
+  wins — Launch Services user preferences override ranks.
+
 ## [0.2.1] - 2026-08-01
 
 ### Changed
