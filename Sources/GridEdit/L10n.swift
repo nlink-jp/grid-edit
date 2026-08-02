@@ -3,7 +3,7 @@ import Foundation
 /// Localized string for `key` from this target's resource bundle.
 /// Keys are the English source strings (en.lproj is an identity table).
 func L(_ key: String) -> String {
-    NSLocalizedString(key, bundle: .module, comment: "")
+    NSLocalizedString(key, bundle: .appResources, comment: "")
 }
 
 /// Localized, count-aware menu title: `oneKey` verbatim for a single item,

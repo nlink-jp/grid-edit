@@ -63,7 +63,7 @@ public enum DocumentIO {
                 return String(
                     format: NSLocalizedString(
                         "This file is %@; grid-edit opens files up to %@.",
-                        bundle: .module, comment: ""),
+                        bundle: .coreResources, comment: ""),
                     size, limit)
             }
         }

@@ -74,6 +74,17 @@ assets/                     AppIcon-1024.png source (not yet added)
   (the test process runs in the system language) — compare against
   `L(...)` instead.
 
+- **Never use SwiftPM's `Bundle.module`; use `Bundle.appResources` /
+  `Bundle.coreResources`.** The generated `Bundle.module` accessor only
+  tries `<name>.bundle` beside `Bundle.main.bundleURL` (i.e. the `.app`
+  root, not `Contents/Resources`) and then an absolute `.build` path
+  baked in at compile time. Both resolve on the build machine and neither
+  resolves anywhere else, so it trapped at launch on every fresh install
+  through v0.2.3. `ResourceBundleLocator` searches the app layout first
+  and degrades to English instead of trapping. This class of bug is
+  invisible locally — verify a packaged build with the `.build`
+  resource bundles moved aside.
+
 - **The cell editor is an NSTextView overlay, not an NSTextField.** Inside
   an NSTableView the field-editor delegate forwarding
   (`control:textView:doCommandBySelector:`) does not fire, so an

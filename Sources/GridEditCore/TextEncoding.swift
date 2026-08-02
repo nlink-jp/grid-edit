@@ -79,13 +79,13 @@ public enum CSVEngineError: Error, Equatable, LocalizedError {
         case .decodeFailed(let encoding):
             return String(
                 format: NSLocalizedString(
-                    "The file could not be decoded as %@.", bundle: .module, comment: ""),
+                    "The file could not be decoded as %@.", bundle: .coreResources, comment: ""),
                 encoding.rawValue)
         case .encodeFailed(let encoding):
             return String(
                 format: NSLocalizedString(
                     "The text contains characters not representable in %@.",
-                    bundle: .module, comment: ""),
+                    bundle: .coreResources, comment: ""),
                 encoding.rawValue)
         }
     }
